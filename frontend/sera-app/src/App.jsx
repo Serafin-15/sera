@@ -1,7 +1,7 @@
 import { useState } from "react";
 import "./css/App.css";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import Welcome from "./components/Welcome";
+import Welcome from "./components/welcome";
 import Login from "./components/Login";
 
 function App() {
