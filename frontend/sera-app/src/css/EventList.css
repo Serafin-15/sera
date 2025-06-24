@@ -1,0 +1,26 @@
+.event-container{
+    width: 100%;
+    height: 100%;
+}
+.event-board{
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    width: 1200px;
+    overflow-y: scroll;
+    gap: 2rem;
+}
+.event-image{
+    width:80x;
+    height: 180px;
+}
+.event-card{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    border: solid 1px black;
+    padding: 1rem;
+}
+.title{
+}
+

@@ -13,20 +13,19 @@ function App() {
       <div className="App">
         <header className="banner">
           <div className="link-container">
-            <EventList></EventList>
-            <Calendar></Calendar>
-            <Profile></Profile>
+            <Link to={`/calendar`}>Calendar page</Link>
+            <Link to={`/events`}>Event List page</Link>
+            <Link to={`/profile`}>Profile page</Link>
+            <Link to={`/`}>Return to Login</Link>
           </div>
-          {/* <Routes>
-            <Route path="/events" element={<EventList />}></Route>
-            <Route path="/calendar" element={<Calendar />}></Route>
-            <Route path="/profile" element={<Profile />}></Route>
-          </Routes> */}
         </header>
         <Routes>
           <Route path="/" element={<Login />}></Route>
+          <Route path="/events" element={<EventList />}></Route>
+          <Route path="/calendar" element={<Calendar />}></Route>
+          <Route path="/profile" element={<Profile />}></Route>
         </Routes>
-        <footer>Serafin for a better future</footer>
+        <footer>Sera for a better future</footer>
       </div>
     </Router>
   );
