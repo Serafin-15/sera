@@ -40,9 +40,7 @@ router.post("/signup", async (req, res) => {
       },
     });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Something went wrong with signup!" });
+    res.status(500).json({ message: "Something went wrong with signup!" });
   }
 });
 
@@ -80,9 +78,7 @@ router.post("/login", async (req, res) => {
       },
     });
   } catch {
-    res
-      .status(500)
-      .json({ message: "Something went wrong with login!" });
+    res.status(500).json({ message: "Something went wrong with login!" });
   }
 });
 
@@ -103,7 +99,7 @@ router.get("/me", (req, res) => {
   if (req.session.userId) {
     res.json({
       user: {
-        id: req.sessionID.userId,
+        id: req.session.userId,
         username: req.session.username,
         role: req.session.role,
       },
