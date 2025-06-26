@@ -6,9 +6,11 @@ import Login from "./components/Login";
 import EventList from "./components/EventList";
 import Calendar from "./components/Calendar";
 import Profile from "./components/Profile";
+import { AuthProvider } from "./context/AuthContext";
 
 function App() {
   return (
+    <AuthProvider>
     <Router>
       <div className="App">
         <header className="banner">
@@ -28,6 +30,7 @@ function App() {
         <footer>Sera for a better future</footer>
       </div>
     </Router>
+    </AuthProvider>
   );
 }
 
