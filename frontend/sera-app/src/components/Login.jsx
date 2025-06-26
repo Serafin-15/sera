@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
+const { user, login, signup, logout} = useAuth();
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -8,8 +10,6 @@ export default function Login() {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -25,37 +25,19 @@ export default function Login() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:3000/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-        }),
-      });
-
-      const data = await response.json;
-
-      if (!response.ok) {
-        throw new Error(data.message || "Login failed");
-      }
-      setIsLoggedIn(true);
-      setUser(data.user);
+      const data = await login(formData.username, formData.password);
+      setMessage(data.message);
 
       setFormData({
         username: "",
         password: "",
-        role: "parent",
-      });
-    } catch (error) {
-      setMessage(error.message || "Login failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        role: "parent"});
+  } catch (error) {
+    setMessage(error.message|| "Login Failed");
+  } finally {
+    setIsLoading(false);
+  }
+}
 
   const handleSignup = async (e) => {
     e.preventDefault();
@@ -63,76 +45,54 @@ export default function Login() {
     setMessage("");
 
     try {
-      const response = await fetch("http://localhost:3000/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          role: formData.role,
-        }),
-      });
-
-      const data = await response.json;
-
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Sign up failed username taken already"
-        );
-      }
-
+      const data = await signup(formData.username, formData.password, formData.role);
       setMessage(data.message);
-      setIsLoggedIn(true);
-      setUser(data.user);
 
       setFormData({
         username: "",
         password: "",
-        role: "parent",
-      });
-    } catch (error) {
-      setMessage(error.message || "Login failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        role: "parent"});
+  } catch (error) {
+    setMessage(error.message|| "Signup Failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const handleLogout = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const response = await fetch("http://localhost:3000/logout", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          username: formData.username,
-          password: formData.password,
-          role: formData.role,
-        }),
-      });
+      await logout();
 
-      const data = await response.json;
-
-      if (!response.ok) {
-        throw new Error("Logout failed");
-      }
-
-      setUser(null);
-      setIsLoggedIn(false);
       setMessage("Logged out successfully");
-    } catch (error) {
-      setMessage("Logout failed");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  } catch (error) {
+    setMessage(error.message|| "Logout Failed");
+  } finally {
+    setIsLoading(false);
+  }
+};
+
+  if (user) {
+    return (
+      <div className="login-container">
+        <h1>WELCOME TO SERA, {user.username}!</h1>
+        <div className="user-info">
+          <p>Role: {user.role}</p>
+          <p>User ID: {user.id}</p>
+        </div>
+        <button
+          onClick={handleLogout}
+          disabled={isLoading}
+          className="logout-btn"
+        >
+          {isLoading ? "Logging out..." : "Logout"}
+        </button>
+        {message && <p className="message">{message}</p>}
+      </div>
+    );
+  }
 
   return (
     <div className="login-container">
@@ -178,13 +138,6 @@ export default function Login() {
           disabled={isLoading || !formData.username || !formData.password}
         >
           {isLoading ? "Logging in..." : "Login"}
-        </button>
-        <button
-          onClick={handleLogout}
-          disabled={isLoading}
-          className="logout-btn"
-        >
-          {isLoading ? "Logging out..." : "Logout"}
         </button>
         {message && <p className="message">{message}</p>}
       </form>
