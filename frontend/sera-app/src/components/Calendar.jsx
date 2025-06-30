@@ -4,6 +4,7 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
+import Tooltip from "./Tooltip";
 import "../css/Calendar.css";
 
 export default function Calendar() {
@@ -145,6 +146,7 @@ export default function Calendar() {
           <button className="btn btn-danger" onClick={clearAllEvents}>
             Clear All Events
           </button>
+          <Tooltip></Tooltip>
         </div>
       </div>
 
@@ -205,7 +207,7 @@ export default function Calendar() {
               <label>Description</label>
               <input
                 type="text"
-                value={eventForm.title}
+                value={eventForm.description}
                 onChange={(e) =>
                   setEventForm({ ...eventForm, description: e.target.value })
                 }
