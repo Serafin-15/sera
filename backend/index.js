@@ -6,6 +6,9 @@ const app = express();
 const PORT = 3000;
 
 const authRoutes = require("./routes/auth");
+const mapboxRoutes = require("./routes/mapbox");
+
+
 
 app.use(express.json());
 app.use(cors({
@@ -23,6 +26,7 @@ app.use(
 );
 
 app.use(authRoutes);
+app.use('/api', mapboxRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
