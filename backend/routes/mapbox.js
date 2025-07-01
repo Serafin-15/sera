@@ -48,25 +48,24 @@ router.get("/directions", async (request, response) => {
   }
 });
 
-function formatDuration(seconds){
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600)/60)
+function formatDuration(seconds) {
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
 
-    if(hours>0){
-        return `${hours} h ${minutes} m`
-    }
+  if (hours > 0) {
+    return `${hours} h ${minutes} m`;
+  }
 
-    return `${minutes}m`
+  return `${minutes} m`;
 }
 
-function formatDistance(meters){
-    const miles = meters * .000623
+function formatDistance(meters) {
+  const miles = meters * 0.000623;
 
-
-    if(miles >= 1){
-        return `${miles.toFixed(1)}mi`
-    }
-    return `${Math.round(meters)}m`
+  if (miles >= 1) {
+    return `${miles.toFixed(1)} mi`;
+  }
+  return `${Math.round(meters)} m`;
 }
 
 module.exports = router;
