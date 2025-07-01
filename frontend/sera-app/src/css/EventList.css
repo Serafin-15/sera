@@ -55,3 +55,12 @@
     max-height: 90vh;
     overflow-y: auto;
 }
+
+.load-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    gap: 1rem;
+}
