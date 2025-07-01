@@ -2,7 +2,7 @@ import React, { useState } from "react";
 
 export default function Tooltip() {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
   const openModal = (event) => {
     setIsModalOpen(true);
@@ -14,15 +14,15 @@ export default function Tooltip() {
   return (
     <div
       className="tooltip-container"
-      onMouseEnter={() => setIsVisible(true)}
-      onMouseLeave={() => setIsVisible(false)}
+      onMouseEnter={() => setIsTooltipVisible(true)}
+      onMouseLeave={() => setIsTooltipVisible(false)}
     >
       <img
         src="./public/question.png"
         alt="information button"
         onClick={() => openModal()}
       ></img>
-      {isVisible && (
+      {isTooltipVisible && (
         <div className="tooltip">
           <p>Click to learn how to create calendar events!</p>
         </div>

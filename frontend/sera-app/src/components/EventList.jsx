@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { fetchEvents, fetchMoreEvents } from "../data/data";
+import EventListModal from "./EventListModal";
 
 export default function EventList() {
   const [events, setEvents] = useState([]);
@@ -71,12 +72,6 @@ export default function EventList() {
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
-  };
-
-  const handleModalClick = (e) => {
-    if (e.target.classList.contains("modal-overlay")) {
-      closeModal();
-    }
   };
 
   return (
@@ -176,46 +171,11 @@ export default function EventList() {
             )}
         </>
       )}
-
-      {isModalOpen && selectedEvent && (
-        <div className="modal-overlay" onClick={handleModalClick}>
-          <div className="modal-content">
-            <button className="modal-close" onClick={closeModal}>
-              X
-            </button>
-
-            <div className="modal-image-container">
-              <img
-                className="modal-image"
-                src={selectedEvent.image}
-                alt={selectedEvent.title}
-                onError={(e) => {
-                  e.target.src = "../public/logo.jpg";
-                }}
-              />
-
-              <div className="modal-category">{selectedEvent.category}</div>
-            </div>
-            <div className="modal-body">
-              <h2 className="modal-title">{selectedEvent.title}</h2>
-              <p className="modal-description">{selectedEvent.description}</p>
-
-              <div className="modal-details">
-                <h3>📅 Date: {selectedEvent.date}</h3>
-                <h3>📍 Location: {selectedEvent.location}</h3>
-                <h3>⏰ Time: {selectedEvent.time}</h3>
-              </div>
-
-              <div className="modal-actions">
-                <button className="register-btn">Register for event</button>
-                <button className="modal-cancel-btn" onClick={closeModal}>
-                  Close
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+    <EventListModal
+    isOpen={isModalOpen}
+    event={selectedEvent}
+    onClose={closeModal}
+    />
     </div>
   );
 }

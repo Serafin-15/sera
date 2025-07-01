@@ -146,7 +146,7 @@ export default function Calendar() {
           <button className="btn btn-danger" onClick={clearAllEvents}>
             Clear All Events
           </button>
-          <Tooltip></Tooltip>
+          <Tooltip/>
         </div>
       </div>
 

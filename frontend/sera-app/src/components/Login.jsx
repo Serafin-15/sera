@@ -77,7 +77,7 @@ const { user, login, signup, logout} = useAuth();
   if (user) {
     return (
       <div className="login-container">
-        <h1>WELCOME TO SERA, {user.username}!</h1>
+        <h1>Welcome to Sera, {user.username}!</h1>
         <div className="user-info">
           <p>Role: {user.role}</p>
           <p>User ID: {user.id}</p>
@@ -96,9 +96,9 @@ const { user, login, signup, logout} = useAuth();
 
   return (
     <div className="login-container">
-      <h1>WELCOME TO SERA!</h1>
+      <h1>Welcome to Sera!</h1>
       <form className="container">
-        <label htmlFor="username">Please log in or Create a new User:</label>
+        <label htmlFor="username">Please log in or create a new user:</label>
         <input
           id="username"
           name="username"
