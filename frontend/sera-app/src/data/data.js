@@ -9,6 +9,8 @@ export const eventsData = [
     location: "City Park, New York",
     image: "https://example.com/event-image.jpg",
     category: "Music",
+    capacity: 500,
+    num_attending: 250,
   },
   {
     id: 2,
@@ -20,6 +22,8 @@ export const eventsData = [
     location: "Art Gallery, Los Angeles",
     image: "https://example.com/art-exhibition.jpg",
     category: "Art",
+    capacity: 100,
+    num_attending: 90,
   },
   {
     id: 3,
@@ -31,6 +35,8 @@ export const eventsData = [
     location: "City Library, Boston",
     image: "https://example.com/book-launch.jpg",
     category: "Literature",
+    capacity: 50,
+    num_attending: 12,
   },
   {
     id: 4,
@@ -42,6 +48,8 @@ export const eventsData = [
     location: "Downtown Market, Chicago",
     image: "https://example.com/food-fair.jpg",
     category: "Food",
+    capacity: 300,
+    num_attending: 250,
   },
   {
     id: 5,
@@ -53,6 +61,8 @@ export const eventsData = [
     location: "Central Park, New York",
     image: "https://example.com/music-festival.jpg",
     category: "Music",
+    capacity: 400,
+    num_attending: 25,
   },
   {
     id: 6,
@@ -64,6 +74,8 @@ export const eventsData = [
     location: "Convention Center, San Francisco",
     image: "https://example.com/tech-conference.jpg",
     category: "Technology",
+    capacity: 150,
+    num_attending: 10,
   },
   {
     id: 7,
@@ -75,6 +87,8 @@ export const eventsData = [
     location: "Cinema Hall, Seattle",
     image: "https://example.com/film-screening.jpg",
     category: "Film",
+    capacity: 500,
+    num_attending: 480,
   },
 ];
 
