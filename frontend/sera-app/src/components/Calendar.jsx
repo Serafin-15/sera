@@ -19,6 +19,23 @@ export default function Calendar() {
     allDay: false,
   });
 
+    const safeCreateDate = (dateValue) => {
+    try{
+        const date = new Date(dateValue);
+        return !isNaN(date.getTime()) ? date : new Date();
+    } catch (error) {
+        return new Date();
+    }
+  };
+
+  const convertUTC = (localDate) => {
+        if(localDate instanceof Date && !isNaN(localDate.getTime())){
+            const utcDate = new Date(localDate.getTime() + (localDate.getTimezoneOffset()) * 60000);
+            return utcDate;
+        }
+        return localDate;
+  };
+
   useEffect(() => {
     const savedEvents = localStorage.getItem("calendarEvents");
     if (savedEvents) {
@@ -40,8 +57,8 @@ export default function Calendar() {
     setEventForm({
       title: "",
       description: "",
-      start: selectInfo.start,
-      end: selectInfo.end,
+      start: convertUTC(safeCreateDate(selectInfo.start)),
+      end: convertUTC(safeCreateDate(selectInfo.end)),
       allDay: false,
     });
     setSelectedEvent(null);
@@ -49,12 +66,12 @@ export default function Calendar() {
   };
 
   const handleEventClick = (clickInfo) => {
-    setSelectedEvent(clickInfo);
+    setSelectedEvent(clickInfo.event);
     setEventForm({
       title: clickInfo.title,
       description: clickInfo.description || "",
-      start: clickInfo.start,
-      end: clickInfo.end,
+      start: convertUTC(safeCreateDate(clickInfo.start)),
+      end: convertUTC(safeCreateDate(clickInfo.end)),
       allDay: clickInfo.allDay,
     });
     setShowEventModal(true);
@@ -70,8 +87,8 @@ export default function Calendar() {
       id: selectedEvent ? selectedEvent.id : Date.now().toString(),
       title: eventForm.title,
       description: eventForm.description,
-      start: eventForm.start,
-      end: eventForm.end,
+      start: convertUTC(safeCreateDate(eventForm.start)),
+      end: convertUTC(safeCreateDate(eventForm.end)),
       allDay: eventForm.allDay,
     };
 
@@ -124,9 +141,6 @@ export default function Calendar() {
     });
   };
 
-  const loadSampleEvents = () => {
-    setEvents(sampleEvents);
-  };
 
   const clearAllEvents = () => {
     if (window.confirm("Are you sure you want to clear all events?")) {
@@ -143,7 +157,7 @@ export default function Calendar() {
         </p>
 
         <div className="calendar-actions">
-          <button className="btn btn-danger" onClick={clearAllEvents}>
+          <button className="btn-danger" onClick={clearAllEvents}>
             Clear All Events
           </button>
           <Tooltip/>
@@ -194,7 +208,7 @@ export default function Calendar() {
               <label>Title *</label>
               <input
                 type="text"
-                value={eventForm.title}
+                value={eventForm.title || ""}
                 onChange={(e) =>
                   setEventForm({ ...eventForm, title: e.target.value })
                 }
@@ -221,12 +235,15 @@ export default function Calendar() {
                 <input
                   type="datetime-local"
                   value={eventForm.start.toISOString().slice(0, 16)}
-                  onChange={(e) =>
+                  onChange={(e) =>{
+                    const newDate = safeCreateDate(e.target.value)
                     setEventForm({
                       ...eventForm,
-                      start: new Date(e.target.value),
+                      start: newDate,
                     })
+                  }            
                   }
+ 
                 />
               </div>
               <div className="form-group">
@@ -234,11 +251,14 @@ export default function Calendar() {
                 <input
                   type="datetime-local"
                   value={eventForm.end.toISOString().slice(0, 16)}
-                  onChange={(e) =>
+                  onChange={(e) =>{
+                    const newDate = safeCreateDate(e.target.value)
                     setEventForm({
                       ...eventForm,
-                      end: new Date(e.target.value),
-                    })
+                      end: newDate,
+                    })  
+                  }
+  
                   }
                 />
               </div>
@@ -257,15 +277,15 @@ export default function Calendar() {
               </label>
             </div>
             <div className="modal-actions">
-              <button className="btn btn-primary" onClick={handleSaveEvent}>
+              <button className="btn-primary" onClick={handleSaveEvent}>
                 {selectedEvent ? "Update Event" : "Add Event"}
               </button>
               {selectedEvent && (
-                <button className="btn btn-danger" onClick={handleDeleteEvent}>
+                <button className="btn-danger" onClick={handleDeleteEvent}>
                   Delete
                 </button>
               )}
-              <button className="btn btn-secondary" onClick={handleCancel}>
+              <button className="btn-secondary" onClick={handleCancel}>
                 Cancel
               </button>
             </div>
