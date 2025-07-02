@@ -74,6 +74,29 @@ export default function EventList() {
     setSelectedEvent(null);
   };
 
+  const getCapacityInfo = (event) => {
+    const capacityPercentage = (event.num_attending / event.capacity) * 100;
+
+    if (capacityPercentage <= 10) {
+      return {
+        class: "low-capacity",
+        indicator: "low",
+        text: `${event.num_attending}/${event.capacity}`,
+      };
+    } else if (capacityPercentage > 50) {
+      return {
+        class: "high-capacity",
+        indicator: "high",
+        text: `${event.num_attending}/${event.capacity}`,
+      };
+    } else {
+      return {
+        class: "medium-capacity",
+        indicator: "medium",
+        text: `${event.num_attending}/${event.capacity}`,
+      };
+    }
+  };
   return (
     <div className="event-container">
       <div className="event-header">
@@ -114,23 +137,27 @@ export default function EventList() {
           </div>
           <div className="event-board">
             {filteredEvents.length > 0 ? (
-              filteredEvents.map((event) => (
-                <div key={event.id} className="event-card">
+              filteredEvents.map((event) => {
+                const capacityInfo = getCapacityInfo(event);
+                return(
+                  <div key={event.id} className={`event-card ${capacityInfo.class}`}>
                   <div className="event-image-container">
                     <img
                       className="event-image"
                       src={event.image}
                       alt={event.title}
                       onError={(e) => {
-                        e.target.src = "https://picsum.photos/200/300?random=259";
+                        e.target.src =
+                          "https://picsum.photos/200/300?random=259";
                       }}
                     />
                     <div className="event-category">{event.category}</div>
+                    <div className={`capacity-indicator ${capacityInfo.indicator}`}>
+                    {capacityInfo.text}</div> 
                   </div>
 
                   <div className="event-content">
                     <h2 className="event-card-title">{event.title}</h2>
-
                     <div className="event-actions">
                       <button
                         className="detail-btn"
@@ -141,10 +168,11 @@ export default function EventList() {
                     </div>
                   </div>
                 </div>
-              ))
+                )
+})
             ) : (
               <div className="no-event">
-                <p>No events found mathc your search criteria!</p>
+                <p>No events found that match your search criteria!</p>
                 <button
                   className="clear-search-btn"
                   onClick={() => {
@@ -156,26 +184,26 @@ export default function EventList() {
                 </button>
               </div>
             )}
-          </div>            
+          </div>
           {hasMoreEvents && (
-              <div className="load-more-section">
-                <button
-                  className="load-more-btn"
-                  onClick={loadMoreEvents}
-                  disabled={loadingMore}
-                >
-                  {loadingMore ? "Loading More Events..." : "Load More Events"}
-                </button>
-                {loadingMore && <p>Loading more events...</p>}
-              </div>
-            )}
+            <div className="load-more-section">
+              <button
+                className="load-more-btn"
+                onClick={loadMoreEvents}
+                disabled={loadingMore}
+              >
+                {loadingMore ? "Loading More Events..." : "Load More Events"}
+              </button>
+              {loadingMore && <p>Loading more events...</p>}
+            </div>
+          )}
         </>
       )}
-    <EventListModal
-    isOpen={isModalOpen}
-    event={selectedEvent}
-    onClose={closeModal}
-    />
+      <EventListModal
+        isOpen={isModalOpen}
+        event={selectedEvent}
+        onClose={closeModal}
+      />
     </div>
   );
 }

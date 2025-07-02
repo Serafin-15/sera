@@ -37,6 +37,9 @@ export default function eventListModal({ isOpen, event, onClose }) {
             <h3>📅 Date: {event.date}</h3>
             <h3>📍 Location: {event.location}</h3>
             <h3>⏰ Time: {event.time}</h3>
+            <h3>
+              🧑‍🤝‍🧑 Capacity: {event.num_attending}/{event.capacity}
+            </h3>
           </div>
 
           <div className="modal-actions">
