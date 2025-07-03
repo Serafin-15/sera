@@ -30,6 +30,7 @@ model Event{
   id            Int            @id @default(autoincrement())
   title         String
   description   String?
+  category String
   start_date  DateTime
   end_date    DateTime
   location    String?
