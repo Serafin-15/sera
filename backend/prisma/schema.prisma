@@ -14,6 +14,8 @@ model User {
   role          String
   password      String
   interest      String?
+  longitude     Float?
+  latitude      Float?
   Availablility Availability[]
 }
 
@@ -36,6 +38,8 @@ model Event{
   location    String?
   capacity    Int?
   num_attending Int @default(0)
+  longitude     Float?
+  latitude      Float?
   created_at  DateTime    @default(now())
   updated_at DateTime @updatedAt  
 }

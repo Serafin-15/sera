@@ -12,6 +12,8 @@ async function main() {
       role: "student",
       password: "password",
       interest: "Music",
+      latitude: 40.7128,
+      longitude: -74.0060
     },
   });
 
@@ -23,6 +25,8 @@ async function main() {
       username: "parent1",
       role: "parent",
       password: "password",
+      latitude: 40.7128,
+      longitude: -74.0060
     },
   });
 
@@ -61,6 +65,8 @@ async function main() {
       start_date: new Date("2026-01-15T14:30:00Z"),
       end_date: new Date("2026-01-15T15:30:00Z"),
       location: "Concert Hall",
+      latitude: 40.7130,
+      longitude: -74.0062,
       capacity: 100,
       num_attending: 50
     },
@@ -76,6 +82,8 @@ async function main() {
       start_date: new Date("2026-01-15T16:00:00Z"),
       end_date: new Date("2026-01-15T17:00:00Z"),
       location: "Art Studio",
+      latitude: 40.7306,
+      longitude: -73.9866,
       capacity: 20,
       num_attending: 10
     },
@@ -91,12 +99,13 @@ async function main() {
       start_date: new Date("2026-01-15T15:00:00Z"),
       end_date: new Date("2026-01-15T15:30:00Z"),
       location: "Concert Hall",
+      latitude: 40.7580,
+      longitude: -73.9855,
       capacity: 35,
       num_attending: 20
     },
   });
 }
-
   main().catch((e)=>{
     console.error(e);
     process.exit(1);
