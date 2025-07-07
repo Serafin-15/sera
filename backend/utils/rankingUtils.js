@@ -1,7 +1,7 @@
 const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
 
-function checkAvailability(event, availabilityBlock) {
+function isAvailableForEvent(event, availabilityBlock) {
   if (!availabilityBlock || availabilityBlock.length === 0) {
     return false;
   }
@@ -23,7 +23,7 @@ function checkAvailability(event, availabilityBlock) {
   return false;
 }
 
-function checkInterest(event, studentInterest) {
+function isInterested(event, studentInterest) {
   if (!event.category || !studentInterest) {
     return false;
   }
@@ -43,7 +43,7 @@ async function getRecommendedEvents(studentId, parentId = null) {
       where: { user_id: studentId },
     });
 
-    const parentAvailability = [];
+    let parentAvailability = [];
     if (parentId) {
       parentAvailability = await prisma.availability.findMany({
         where: { user_id: parentId },
@@ -64,18 +64,18 @@ async function getRecommendedEvents(studentId, parentId = null) {
 
     const recommendedEvents = [];
     for (const event of allEvents) {
-      const studentConflict = !checkAvailability(event, studentAvailability);
+      const studentConflict = !isAvailableForEvent(event, studentAvailability);
 
-      const parentConflict = false;
+      let parentConflict = false;
       if (parentId && parentAvailability.length > 0) {
-        parentConflict = !checkAvailability(event, parentAvailability);
+        parentConflict = !isAvailableForEvent(event, parentAvailability);
       }
 
-      const interestMatch = checkInterest(event, studentInterest);
+      const interestMatch = isInterested(event, studentInterest);
 
       if (!studentConflict && !parentConflict && interestMatch) {
         recommendedEvents.push({
-          ...event
+          ...event,
         });
       }
     }
@@ -91,7 +91,7 @@ async function getRecommendedEvents(studentId, parentId = null) {
 }
 
 module.exports = {
-  checkAvailability,
-  checkInterest,
+  isAvailableForEvent,
+  isInterested,
   getRecommendedEvents,
 };
