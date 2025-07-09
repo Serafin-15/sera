@@ -9,11 +9,11 @@ datasource db {
 }
 
 model Coordinates {
-  id Int @id @default(autoincrement())
-  latitude Float
+  id        Int                @id @default(autoincrement())
+  latitude  Float
   longitude Float
-  user      User?
-  event     Event?
+  user      User[]
+  event     Event[]
 
   @@unique([latitude, longitude])
 
@@ -24,56 +24,56 @@ model User {
   role          String
   password      String
   interest      String?
-  coordinatesId Int? @unique
-  coordinates Coordinates? @relation(fields: [coordinatesId], references: [id])
+  coordinatesId Int? 
+  coordinates   Coordinates?   @relation(fields: [coordinatesId], references: [id])
   Availablility Availability[]
   UserInterests UserInterest[]
-  EventHistory EventHistory[]
+  EventHistory  EventHistory[]
 }
 
 model Availability {
-  id          Int      @id @default(autoincrement())
+  id          Int              @id @default(autoincrement())
   description String
   start_date  DateTime
   end_date    DateTime
   user_id     Int
-  user        User     @relation(fields: [user_id], references: [id])
+  user        User             @relation(fields: [user_id], references: [id])
 }
 
 model Event{
   id            Int            @id @default(autoincrement())
   title         String
   description   String?
-  category String
-  start_date  DateTime
-  end_date    DateTime
-  location    String?
-  capacity    Int?
-  num_attending Int @default(0)
-  coordinatesId Int? @unique
-  coordinates Coordinates? @relation(fields: [coordinatesId], references: [id])
-  created_at  DateTime    @default(now())
-  updated_at DateTime @updatedAt
-  EventHistory EventHistory[]  
+  category      String
+  start_date    DateTime
+  end_date      DateTime
+  location      String?
+  capacity      Int?
+  num_attending Int            @default(0)
+  coordinatesId Int? 
+  coordinates   Coordinates?   @relation(fields: [coordinatesId], references: [id])
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+  EventHistory  EventHistory[]  
 }
 
 model UserInterest{
-  id Int @id @default(autoincrement())
-  user_id Int
+  id       Int                 @id @default(autoincrement())
+  user_id  Int
   category String
-  ranking Int
-  user User @relation(fields: [user_id], references: [id])
+  ranking  Int
+  user     User                @relation(fields: [user_id], references: [id])
 
   @@unique([user_id, category])
 }
 
 model EventHistory{
-  id Int @id @default(autoincrement())
-  user_id Int
+  id       Int                 @id @default(autoincrement())
+  user_id  Int
   event_id Int
-  attended Boolean @default(true)
-  user User @relation(fields: [user_id], references: [id])
-  event Event @relation(fields: [event_id], references: [id])
+  attended Boolean             @default(true)
+  user     User                @relation(fields: [user_id], references: [id])
+  event    Event               @relation(fields: [event_id], references: [id])
 
   @@unique([user_id, event_id])
 }
