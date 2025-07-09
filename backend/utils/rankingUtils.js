@@ -2,15 +2,21 @@ const { PrismaClient } = require("../generated/prisma");
 const prisma = new PrismaClient();
 
 const SCORES = {
-  INTEREST_MATCH: 100,
   AVAILABILITY_PERFECT: 50,
   AVAILABILITY_PARTIAL: 25,
+  AVAILABILITY_MINIMUM: 10,
+
   DISTANCE_CLOSE: 30,
   DISTANCE_MEDIUM: 20,
   DISTANCE_FAR: 10,
   DISTANCE_VERY_FAR: 5,
+
+  PAST_ATTENDANCE_SIMILAR: 40,
+  PAST_ATTENDANCE_CATEGORY_MATCH: 20,
+  PAST_ATTENDANCE_ATTENDED: 10,
 };
 
+const INTEREST_CATEGORIES = ["Music", "Art", "Food", "Tech", "Sports/Fitness"];
 function isAvailableForEvent(event, availabilityBlock) {
   if (!availabilityBlock || availabilityBlock.length === 0) {
     return 0;
@@ -38,25 +44,33 @@ function isAvailableForEvent(event, availabilityBlock) {
       const eventDuration = eventEnd.getTime() - eventStart.getTime();
 
       const overlapPercentage = overlapDuration / eventDuration;
-      if (overlapPercentage >= 0.5) {
+
+      if (overlapPercentage >= 0.75) {
         maxScore = Math.max(maxScore, SCORES.AVAILABILITY_PARTIAL);
-      } else if (overlapPercentage > 0) {
+      } else if (overlapPercentage >= 0.5) {
         maxScore = Math.max(
           maxScore,
-          Math.floor(SCORES.AVAILABILITY_PARTIAL * overlapPercentage)
+          Math.floor(SCORES.AVAILABILITY_PARTIAL * 0.8)
         );
+      } else if (overlapPercentage >= 0.25) {
+        maxScore = Math.max(maxScore, SCORES.AVAILABILITY_MINIMUM);
       }
     }
   }
   return maxScore;
 }
 
-function isDistant(userLat, userLong, eventLat, eventLong) {
-  if (!userLat || !userLong || !eventLat || !eventLong) {
+function isDistant(userCoordinates, eventCoordinates) {
+  if ((!userCoordinates, !eventCoordinates)) {
     return 0;
   }
 
-  const distance = calculateDistance(userLat, userLong, eventLat, eventLong);
+  const distance = calculateDistance(
+    userCoordinates.latitude,
+    userCoordinates.longitude,
+    eventCoordinates.latitude,
+    eventCoordinates.longitude
+  );
 
   if (distance <= 5) {
     return SCORES.DISTANCE_CLOSE;
@@ -84,29 +98,88 @@ function calculateDistance(lat1, long1, lat2, long2) {
 }
 
 function isInterested(event, studentInterest) {
-  if (!event.category || !studentInterest) {
+  if (!event.category || !studentInterest || studentInterest.length === 0) {
     return 0;
   }
 
   const eventCategory = event.category.toLowerCase();
-  const studentCategory = studentInterest.toLowerCase();
 
-  if (eventCategory === studentCategory) {
-    return SCORES.INTEREST_MATCH;
+  const matchingInterest = studentInterest.find(
+    (interest) => interest.category.toLowerCase() === eventCategory
+  );
+
+  if (!matchingInterest) {
+    return 0;
   }
-  return 0;
+  return matchingInterest.ranking * 20;
 }
 
-function calculateTotalScore(availabilityScore, distanceScore, interestScore) {
-  return availabilityScore + distanceScore + interestScore;
+function calculatePastAttendanceScore(event, pastEvents) {
+  if (!pastEvents || pastEvents.length === 0) {
+    return 0;
+  }
+
+  let score = 0;
+  const eventCategory = event.category.toLowerCase();
+  const eventTitle = event.title.toLowerCase();
+  const eventDescription = (event.description ?? "").toLowerCase();
+
+  for (const pastEvent of pastEvents) {
+    const pastCategory = pastEvent.category.toLowerCase();
+    const pastTitle = pastEvent.title.toLowerCase();
+    const pastDescription = (pastEvent.description ?? "").toLowerCase();
+
+    if (eventCategory === pastCategory) {
+      score += SCORES.PAST_ATTENDANCE_CATEGORY_MATCH;
+    }
+
+    if (eventTitle.includes(pastTitle) || pastTitle.includes(eventTitle)) {
+      score += SCORES.PAST_ATTENDANCE_SIMILAR;
+    }
+
+    const eventKeywords = eventDescription.split(" ");
+    const pastKeywords = pastDescription.split(" ");
+    const commonKeywords = eventKeywords.filter(
+      (keyword) => pastKeywords.includes(keyword) && keyword.length > 3
+    );
+
+    if (commonKeywords.length >= 2) {
+      score += SCORES.PAST_ATTENDANCE_SIMILAR;
+    }
+
+    score += SCORES.PAST_ATTENDANCE_ATTENDED;
+  }
+  return Math.min(score, 100);
 }
+function calculateTotalScore(
+  availabilityScore,
+  distanceScore,
+  interestScore,
+  pastAttendanceScore
+) {
+  return (
+    availabilityScore + distanceScore + interestScore + pastAttendanceScore
+  );
+}
+
 async function getRecommendedEvents(studentId, parentId = null) {
   try {
     const student = await prisma.user.findUnique({
       where: { id: studentId },
-    });
-    const studentAvailability = await prisma.availability.findMany({
-      where: { user_id: studentId },
+      include: {
+        coordinates: true,
+        Availablility: true,
+        UserInterests: true,
+        EventHistory: {
+          include: {
+            event: {
+              include: {
+                coordinates: true,
+              },
+            },
+          },
+        },
+      },
     });
 
     let parentAvailability = [];
@@ -122,7 +195,14 @@ async function getRecommendedEvents(studentId, parentId = null) {
           gte: new Date(),
         },
       },
+      include: {
+        coordinates: true,
+      },
     });
+
+    const pastAttendedEvents = student.EventHistory.filter(
+      (history) => history.attended
+    ).map((history) => history.event);
 
     const scoredEvents = [];
 
@@ -136,46 +216,50 @@ async function getRecommendedEvents(studentId, parentId = null) {
         continue;
       }
 
-      const availabilityScore = isAvailableForEvent(event, studentAvailability);
-
-      const distanceScore = isDistant(
-        student.latitude,
-        student.longitude,
-        event.latitude,
-        event.longitude
+      const availabilityScore = isAvailableForEvent(
+        event,
+        student.Availablility
       );
-
-      const interestScore = isInterested(event, student.interest);
+      if (availabilityScore === 0) {
+        continue;
+      }
+      const distanceScore = isDistant(student.coordinates, event.coordinates);
+      const interestScore = isInterested(event, student.UserInterests);
+      const pastAttendanceScore = calculatePastAttendanceScore(
+        event,
+        pastAttendedEvents
+      );
 
       const totalScore = calculateTotalScore(
         availabilityScore,
         distanceScore,
-        interestScore
+        interestScore,
+        pastAttendanceScore
       );
-      if (availabilityScore > 0) {
-        scoredEvents.push({
-          ...event,
-          scores: {
-            availability: availabilityScore,
-            distance: distanceScore,
-            interest: interestScore,
-            total: totalScore,
-          },
-        });
-      }
+
+      scoredEvents.push({
+        ...event,
+        scores: {
+          availability: availabilityScore,
+          distance: distanceScore,
+          interest: interestScore,
+          pastAttendace: pastAttendanceScore,
+          total: totalScore,
+        },
+      });
     }
 
     scoredEvents.sort((a, b) => {
       b.scores.total - a.scores.total;
     });
 
-    const filteredEvents = [];
+    const recommendedSchedule = [];
     for (const event of scoredEvents) {
       const eventStart = new Date(event.start_date);
       const eventEnd = new Date(event.end_date);
 
       let hasOverlap = false;
-      for (const selectedEvent of filteredEvents) {
+      for (const selectedEvent of recommendedSchedule) {
         const selectedStart = new Date(selectedEvent.start_date);
         const selectedEnd = new Date(selectedEvent.end_date);
 
@@ -185,10 +269,10 @@ async function getRecommendedEvents(studentId, parentId = null) {
         }
       }
       if (!hasOverlap) {
-        filteredEvents.push(event);
+        recommendedSchedule.push(event);
       }
     }
-    return filteredEvents;
+    return recommendedSchedule;
   } catch (error) {
     console.error("Error getting recommended events: ", error);
   }
@@ -215,12 +299,54 @@ function isParentAvailable(event, availabilityBlock) {
   }
   return false;
 }
+
+async function initializeUserInterests(userId) {
+  const defaultInterests = INTEREST_CATEGORIES.map((category) => ({
+    user_id: userId,
+    category: category,
+    ranking: 3,
+  }));
+
+  return await prisma.userInterest.createMany({
+    data: defaultInterests,
+    skipDuplicates: true,
+  });
+}
+
+async function createOrGetCoordinates(latitude, longitude) {
+  if (!latitude || !longitude) {
+    return null;
+  }
+
+  const exisitingCoordinates = await prisma.coordinates.findFirst({
+    where: {
+      latitude: latitude,
+      longitude: longitude,
+    },
+  });
+
+  if (exisitingCoordinates) {
+    return exisitingCoordinates;
+  }
+
+  return await prisma.coordinates.create({
+    data: {
+      latitude: latitude,
+      longitude: longitude,
+    },
+  });
+}
+
 module.exports = {
   isAvailableForEvent,
-  isInterested,
   isDistant,
+  isInterested,
+  calculatePastAttendanceScore,
   calculateTotalScore,
   getRecommendedEvents,
   isParentAvailable,
+  initializeUserInterests,
+  createOrGetCoordinates,
   SCORES,
+  INTEREST_CATEGORIES,
 };
