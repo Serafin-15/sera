@@ -16,7 +16,18 @@ const SCORES = {
   PAST_ATTENDANCE_ATTENDED: 10,
 };
 
+const DEFAULT_WEIGHTS = {
+  availability: 0.35,
+  distance: 0.25,
+  interest: 0.25,
+  pastAttendance: 0.15,
+};
+
+const TIME_DECAY_FACTOR = 0.5;
+const TIME_DECAY_MONTHS = 3;
+
 const INTEREST_CATEGORIES = ["Music", "Art", "Food", "Tech", "Sports/Fitness"];
+
 function isAvailableForEvent(event, availabilityBlock) {
   if (!availabilityBlock || availabilityBlock.length === 0) {
     return 0;
@@ -61,7 +72,7 @@ function isAvailableForEvent(event, availabilityBlock) {
 }
 
 function isDistant(userCoordinates, eventCoordinates) {
-  if ((!userCoordinates, !eventCoordinates)) {
+  if (!userCoordinates || !eventCoordinates) {
     return 0;
   }
 
@@ -114,6 +125,48 @@ function isInterested(event, studentInterest) {
   return matchingInterest.ranking * 20;
 }
 
+function calculateTimeDecayFactor(eventData) {
+  const now = new Date();
+  const eventTime = new Date(eventData);
+  const monthsDiff =
+    (now.getTime() - eventTime.getTime()) / (1000 * 60 * 60 * 24 * 30);
+
+  if (monthsDiff > TIME_DECAY_MONTHS) {
+    return TIME_DECAY_FACTOR;
+  }
+  return 1.0;
+}
+
+function normalizeScore(score, maxScore) {
+    return Math.min(score/maxScore, 1);
+}
+
+function calculateWeightedScore(
+  availabilityScore,
+  distanceScore,
+  interestScore,
+  pastAttendanceScore,
+  weights = DEFAULT_WEIGHTS
+) {
+  const normalizedAvailability = normalizeScore(
+    availabilityScore,
+    SCORES.AVAILABILITY_PERFECT
+  );
+  const normalizedDistance = normalizeScore(
+    distanceScore,
+    SCORES.DISTANCE_CLOSE
+  );
+  const normalizedInterest = normalizeScore(interestScore, 100);
+  const normalizedPastAttendance = normalizeScore(pastAttendanceScore, 100);
+
+  const weightedSum =
+    normalizedAvailability * weights.availability +
+    normalizedDistance * weights.distance +
+    normalizedInterest * weights.interest +
+    normalizedPastAttendance * weights.pastAttendance;
+  return weightedSum;
+}
+
 function calculatePastAttendanceScore(event, pastEvents) {
   if (!pastEvents || pastEvents.length === 0) {
     return 0;
@@ -129,12 +182,14 @@ function calculatePastAttendanceScore(event, pastEvents) {
     const pastTitle = pastEvent.title.toLowerCase();
     const pastDescription = (pastEvent.description ?? "").toLowerCase();
 
+    const timeDecay = calculateTimeDecayFactor(pastEvent.start_date);
+
     if (eventCategory === pastCategory) {
-      score += SCORES.PAST_ATTENDANCE_CATEGORY_MATCH;
+      score += SCORES.PAST_ATTENDANCE_CATEGORY_MATCH * timeDecay;
     }
 
     if (eventTitle.includes(pastTitle) || pastTitle.includes(eventTitle)) {
-      score += SCORES.PAST_ATTENDANCE_SIMILAR;
+      score += SCORES.PAST_ATTENDANCE_SIMILAR * timeDecay;
     }
 
     const eventKeywords = eventDescription.split(" ");
@@ -144,10 +199,10 @@ function calculatePastAttendanceScore(event, pastEvents) {
     );
 
     if (commonKeywords.length >= 2) {
-      score += SCORES.PAST_ATTENDANCE_SIMILAR;
+      score += SCORES.PAST_ATTENDANCE_SIMILAR * timeDecay;
     }
 
-    score += SCORES.PAST_ATTENDANCE_ATTENDED;
+    score += SCORES.PAST_ATTENDANCE_ATTENDED * timeDecay;
   }
   return Math.min(score, 100);
 }
@@ -155,10 +210,15 @@ function calculateTotalScore(
   availabilityScore,
   distanceScore,
   interestScore,
-  pastAttendanceScore
+  pastAttendanceScore,
+  weights = DEFAULT_WEIGHTS
 ) {
-  return (
-    availabilityScore + distanceScore + interestScore + pastAttendanceScore
+  return calculateWeightedScore(
+    availabilityScore,
+    distanceScore,
+    interestScore,
+    pastAttendanceScore,
+    weights
   );
 }
 
@@ -234,9 +294,9 @@ async function getRecommendedEvents(studentId, parentId = null) {
         availabilityScore,
         distanceScore,
         interestScore,
-        pastAttendanceScore
+        pastAttendanceScore,
+        DEFAULT_WEIGHTS
       );
-
       scoredEvents.push({
         ...event,
         scores: {
@@ -347,6 +407,8 @@ module.exports = {
   isParentAvailable,
   initializeUserInterests,
   createOrGetCoordinates,
+  calculateWeightedScore,
   SCORES,
   INTEREST_CATEGORIES,
+  DEFAULT_WEIGHTS,
 };
