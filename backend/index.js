@@ -8,6 +8,7 @@ const PORT = 3000;
 const authRoutes = require("./routes/auth");
 const mapboxRoutes = require("./routes/mapbox");
 const rankRoutes = require("./routes/ranking");
+const carpoolRoutes = require("./routes/carpool");
 
 app.use(express.json());
 app.use(
@@ -29,6 +30,7 @@ app.use(
 app.use(authRoutes);
 app.use("/api", mapboxRoutes);
 app.use("/api", rankRoutes);
+app.use("/api", carpoolRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
