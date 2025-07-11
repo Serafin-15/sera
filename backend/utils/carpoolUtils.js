@@ -19,16 +19,16 @@ function calculateDistance(lat1, long1, lat2, long2) {
   return R * c;
 }
 
-function getDistance(friend, user) {
-  if (!friend.coordinates || !user.coordinates) {
+function getDistance(destination, source) {
+  if (!destination.coordinates || !source.coordinates) {
     return Infinity;
   }
 
   return calculateDistance(
-    friend.coordinates.latitude,
-    friend.coordinates.longitude,
-    user.coordinates.latitude,
-    user.coordinates.longitude
+    destination.coordinates.latitude,
+    destination.coordinates.longitude,
+    source.coordinates.latitude,
+    source.coordinates.longitude
   );
 }
 
@@ -49,9 +49,9 @@ async function routeDistance(driver, passengers, event) {
     waypoints.push(event.coordinates);
     const coordinates = waypoints
       .map((wp) => `${wp.longitude}, ${wp.latitude}`)
-      .join(":");
+      .join(";");
 
-    token = process.env.MAPBOX_ACCESS_TOKEN;
+    const token = process.env.MAPBOX_ACCESS_TOKEN;
     const url = `${MAPBOX_API_BASE}/${coordinates}`;
     const response = await axios.get(url, {
       params: {
@@ -78,6 +78,7 @@ async function routeDistance(driver, passengers, event) {
     };
   } catch (error) {
     console.error("Error when calculating distance: ", error);
+    return { distance: Infinity, duration: Infinity, route: [] };
   }
 }
 
@@ -98,20 +99,20 @@ async function generateDriverCombinations(users, eventId) {
   const attendingUsers = users.filter((user) => attendeeIds.includes(user.id));
 
   for (let i = 1; i <= Math.min(MAX_CAPACITY, attendingUsers.length); i++) {
-    const driverCombos = getCombinations(attendingUsers, i);
+    const driverCombos = generateDriverGroups(attendingUsers, i);
     combinations.push(...driverCombos);
   }
 
   return combinations;
 }
 
-function getCombinations(arr, size) {
+function generateDriverGroups(arr, size) {
   if (size === 1) return arr.map((item) => [item]);
 
   const combinations = [];
   for (let i = 0; i <= arr.length - size; i++) {
     const head = arr[i];
-    const tailCombos = getCombinations(arr.slice(i + 1), size - 1);
+    const tailCombos = generateDriverGroups(arr.slice(i + 1), size - 1);
     tailCombos.forEach((combo) => {
       combinations.push([head, ...combo]);
     });
@@ -164,33 +165,43 @@ async function carpoolAssignment(eventId, requestingUserId) {
         .filter(
           (user) => !driverIds.includes(user.id) && user.id !== requestingUserId
         );
-      const assignments = assignPassenegersToDrivers(drivers, passengers);
+      const assignments = assignPassengersToDrivers(drivers, passengers);
 
       for (const assignment of assignments) {
         const routeInfo = await routeDistance(
           assignment.driver,
           assignment.passengers,
-          eventAttendees
+          event
         );
+        const requestingUserIsPassenger = assignment.passengers.some(
+          (p) => p.id === requestingUserId
+        );
+        const hasSpaceForRequestingUser =
+          assignment.passengers.length < MAX_CAPACITY - 1;
 
-        routes.push({
-          driver: {
-            id: assignment.driver.id,
-            username: assignment.driver.username,
-            coordinates: assignment.driver.coordinates,
-          },
-          passengers: assignment.passengers.map((p) => ({
-            id: p.id,
-            username: p.username,
-            coordinates: p.coordinates,
-          })),
-          event: {
-            id: event.id,
-            username: event.username,
-            coordinates: event.coordinates,
-          },
-          route: routeInfo,
-        });
+        if (
+          (requestingUserIsPassenger || hasSpaceForRequestingUser) &&
+          assignment.passengers.length > 0
+        ) {
+          routes.push({
+            driver: {
+              id: assignment.driver.id,
+              username: assignment.driver.username,
+              coordinates: assignment.driver.coordinates,
+            },
+            passengers: assignment.passengers.map((p) => ({
+              id: p.id,
+              username: p.username,
+              coordinates: p.coordinates,
+            })),
+            event: {
+              id: event.id,
+              title: event.title,
+              coordinates: event.coordinates,
+            },
+            route: routeInfo,
+          });
+        }
       }
     }
 
@@ -198,10 +209,11 @@ async function carpoolAssignment(eventId, requestingUserId) {
     return routes;
   } catch (error) {
     console.error("Error in carpool assignment", error);
+    return [];
   }
 }
 
-function assignPassenegersToDrivers(drivers, passengers) {
+function assignPassengersToDrivers(drivers, passengers) {
   const assignments = drivers.map((driver) => ({
     driver,
     passengers: [],
@@ -252,13 +264,10 @@ async function getCarpoolRoutes(eventId, userId) {
 
     const routes = await carpoolAssignment(eventId, userId);
 
-    const userRoutes = routes.filter((route) =>
-      route.passengers.some((passenger) => passenger.id === userId)
-    );
-
-    return userRoutes;
+    return routes;
   } catch (error) {
-    console.error("Error getting carpool routes: ", routes);
+    console.error("Error getting carpool routes: ", error);
+    return [];
   }
 }
 
@@ -269,5 +278,5 @@ module.exports = {
   carpoolAssignment,
   getCarpoolRoutes,
   generateDriverCombinations,
-  assignPassenegersToDrivers,
+  assignPassengersToDrivers,
 };

@@ -5,7 +5,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "server": "node --watch index.js",
-    "seed": "node prisma/seeds.js"
+    "seed": "node prisma/seeds.js",
+    "seed2": "node prisma/carpoolSeed.js"
   },
   "keywords": [],
   "author": "",
