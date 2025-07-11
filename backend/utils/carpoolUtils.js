@@ -1,6 +1,7 @@
 const { PrismaClient } = require("../generated/prisma");
 const axios = require("axios");
 const prisma = new PrismaClient();
+const { calculateTotalScore } = require("./carpoolScoring");
 
 const MAX_CAPACITY = 3;
 const MAPBOX_API_BASE = "https://api.mapbox.com/directions/v5/mapbox/driving";
@@ -183,6 +184,12 @@ async function carpoolAssignment(eventId, requestingUserId) {
           (requestingUserIsPassenger || hasSpaceForRequestingUser) &&
           assignment.passengers.length > 0
         ) {
+          const routeScore = calculateTotalScore(
+            routeInfo.distance,
+            routeInfo.duration,
+            assignment.passengers.length
+          );
+
           routes.push({
             driver: {
               id: assignment.driver.id,
@@ -200,12 +207,13 @@ async function carpoolAssignment(eventId, requestingUserId) {
               coordinates: event.coordinates,
             },
             route: routeInfo,
+            score: routeScore,
           });
         }
       }
     }
 
-    routes.sort((a, b) => a.route.distance - b.route.distance);
+    routes.sort((a, b) => a.score.totalScore - b.score.totalScore);
     return routes;
   } catch (error) {
     console.error("Error in carpool assignment", error);
@@ -271,6 +279,19 @@ async function getCarpoolRoutes(eventId, userId) {
   }
 }
 
+async function getOptimalRoute(eventId, userId) {
+  try {
+    const routes = await getCarpoolRoutes(eventId, userId);
+    if (routes.length === 0) {
+      return [];
+    }
+    return routes[0];
+  } catch (error) {
+    console.error("Error getting route: ", error);
+    return [];
+  }
+}
+
 module.exports = {
   calculateDistance,
   getDistance,
@@ -278,5 +299,6 @@ module.exports = {
   carpoolAssignment,
   getCarpoolRoutes,
   generateDriverCombinations,
+  getOptimalRoute,
   assignPassengersToDrivers,
 };
