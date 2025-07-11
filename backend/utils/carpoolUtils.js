@@ -1,6 +1,7 @@
 const { PrismaClient } = require("../generated/prisma");
 const axios = require("axios");
 const prisma = new PrismaClient();
+const { calculateTotalScore } = require("./carpoolScoring");
 
 const MAX_CAPACITY = 3;
 const MAPBOX_API_BASE = "https://api.mapbox.com/directions/v5/mapbox/driving";
@@ -160,36 +161,45 @@ async function carpoolAssignment(eventId, requestingUserId) {
       });
 
       const driverIds = drivers.map((driver) => driver.id);
-      const passengers = eventAttendees
+      const allPassengers = eventAttendees
         .map((attendee) => attendee.user)
         .filter(
-          (user) => !driverIds.includes(user.id) && user.id !== requestingUserId
+          (user) => !driverIds.includes(user.id)
         );
-      const assignments = assignPassengersToDrivers(drivers, passengers);
+      const assignments = assignPassengersToDrivers(drivers, allPassengers);
 
       for (const assignment of assignments) {
-        const routeInfo = await routeDistance(
-          assignment.driver,
-          assignment.passengers,
-          event
-        );
-        const requestingUserIsPassenger = assignment.passengers.some(
-          (p) => p.id === requestingUserId
-        );
+        const requestingUserIsPassenger = assignment.passengers.some((p) => p.id === requestingUserId)
         const hasSpaceForRequestingUser =
           assignment.passengers.length < MAX_CAPACITY - 1;
+
 
         if (
           (requestingUserIsPassenger || hasSpaceForRequestingUser) &&
           assignment.passengers.length > 0
         ) {
+          let finalPassengers =[...assignment.passengers]
+          if(!requestingUserIsPassenger && hasSpaceForRequestingUser){
+            finalPassengers.push(requestingUser);
+          }
+                  const routeInfo = await routeDistance(
+          assignment.driver,
+          finalPassengers,
+          event
+        );
+          const routeScore = calculateTotalScore(
+            routeInfo.distance,
+            routeInfo.duration,
+            assignment.passengers.length
+          );
+
           routes.push({
             driver: {
               id: assignment.driver.id,
               username: assignment.driver.username,
               coordinates: assignment.driver.coordinates,
             },
-            passengers: assignment.passengers.map((p) => ({
+            passengers: finalPassengers.map((p) => ({
               id: p.id,
               username: p.username,
               coordinates: p.coordinates,
@@ -200,12 +210,13 @@ async function carpoolAssignment(eventId, requestingUserId) {
               coordinates: event.coordinates,
             },
             route: routeInfo,
+            score: routeScore,
           });
         }
       }
     }
 
-    routes.sort((a, b) => a.route.distance - b.route.distance);
+    routes.sort((a, b) => a.score.totalScore - b.score.totalScore);
     return routes;
   } catch (error) {
     console.error("Error in carpool assignment", error);
@@ -271,6 +282,19 @@ async function getCarpoolRoutes(eventId, userId) {
   }
 }
 
+async function getOptimalRoute(eventId, userId) {
+  try {
+    const routes = await getCarpoolRoutes(eventId, userId);
+    if (routes.length === 0) {
+      return [];
+    }
+    return routes[0];
+  } catch (error) {
+    console.error("Error getting route: ", error);
+    return [];
+  }
+}
+
 module.exports = {
   calculateDistance,
   getDistance,
@@ -278,5 +302,6 @@ module.exports = {
   carpoolAssignment,
   getCarpoolRoutes,
   generateDriverCombinations,
+  getOptimalRoute,
   assignPassengersToDrivers,
 };
