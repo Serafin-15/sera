@@ -53,7 +53,7 @@ function calculateDurationScore(duration) {
 function calculatePassengerScore(passengerCount) {
   if (passengerCount === Infinity || passengerCount <= 0) return 0;
 
-  const thresholds = SCORING_THRESHOLDS.passengerCount;
+  const thresholds = SCORING_THRESHOLDS.passenger;
   if (passengerCount >= thresholds.max.max) return thresholds.max.score;
   if (passengerCount >= thresholds.good.max) return thresholds.good.score;
   return thresholds.poor.score;
@@ -62,7 +62,7 @@ function calculatePassengerScore(passengerCount) {
 function calculateTotalScore(distance, duration, passengerCount) {
   const distanceScore = calculateDistanceScore(distance);
   const durationScore = calculateDurationScore(duration);
-  const passengerScore = calculateDurationScore(passengerCount);
+  const passengerScore = calculatePassengerScore(passengerCount);
 
   const weightedScore =
     distanceScore * SCORING_WEIGHTS.distance +
