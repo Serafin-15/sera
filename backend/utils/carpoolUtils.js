@@ -2,6 +2,16 @@ const { PrismaClient } = require("../generated/prisma");
 const axios = require("axios");
 const prisma = new PrismaClient();
 const { calculateTotalScore } = require("./carpoolScoring");
+const {
+  generateCacheKey,
+  clearAllCaches,
+  cacheRoute,
+  getCacheRoute,
+  cacheDistance,
+  getCacheDistance,
+  cacheAttendee,
+  getCacheAttendee,
+} = require("./cacheUtil");
 
 const MAX_CAPACITY = 3;
 const MAPBOX_API_BASE = "https://api.mapbox.com/directions/v5/mapbox/driving";
@@ -25,19 +35,47 @@ function getDistance(destination, source) {
     return Infinity;
   }
 
-  return calculateDistance(
+  const cacheKey = generateCacheKey(
     destination.coordinates.latitude,
     destination.coordinates.longitude,
     source.coordinates.latitude,
     source.coordinates.longitude
   );
+
+  const cached = getCacheDistance(cacheKey);
+  if (cached !== null) {
+    return cached;
+  }
+
+  const distance = calculateDistance(
+    destination.coordinates.latitude,
+    destination.coordinates.longitude,
+    source.coordinates.latitude,
+    source.coordinates.longitude
+  );
+
+  cacheDistance(cacheKey, distance);
+  return distance;
 }
 
 async function routeDistance(driver, passengers, event) {
   if (!driver.coordinates || !event.coordinates) {
     return { distance: Infinity, duration: Infinity, route: [] };
   }
+  const cacheKey = generateCacheKey(
+    driver.coordinates.latitude,
+    driver.coordinates.longitude,
+    passengers
+      .map((p) => `${p.coordinates?.latitude},${p.coordinates?.longitude}`)
+      .join("|"),
+    event.coordinates.latitude,
+    event.coordinates.longitude
+  );
 
+  const cached = getCacheRoute(cacheKey);
+  if (cached !== null) {
+    return cached;
+  }
   try {
     const waypoints = [driver.coordinates];
 
@@ -64,7 +102,7 @@ async function routeDistance(driver, passengers, event) {
     });
 
     const route = response.data.routes[0];
-    return {
+    const result = {
       distance: Math.round(route.distance / 1000),
       duration: Math.round(route.duration / 60),
       route: route.legs.map((leg) => ({
@@ -77,33 +115,20 @@ async function routeDistance(driver, passengers, event) {
         })),
       })),
     };
+    cacheRoute(cacheKey, result);
+    return result;
   } catch (error) {
     console.error("Error when calculating distance: ", error);
     return { distance: Infinity, duration: Infinity, route: [] };
   }
 }
 
-async function generateDriverCombinations(users, eventId) {
+async function generateDriverCombinations(users, maxCapacity) {
   const combinations = [];
-
-  const eventAttendees = await prisma.eventHistory.findMany({
-    where: { event_id: eventId, attended: true },
-    include: {
-      user: {
-        include: { coordinates: true },
-      },
-    },
-  });
-
-  const attendeeIds = eventAttendees.map((attendee) => attendee.user_id);
-
-  const attendingUsers = users.filter((user) => attendeeIds.includes(user.id));
-
-  for (let i = 1; i <= Math.min(MAX_CAPACITY, attendingUsers.length); i++) {
-    const driverCombos = generateDriverGroups(attendingUsers, i);
+  for (let size = 1; size <= Math.min(maxCapacity, users.length); size++) {
+    const driverCombos = generateDriverGroups(users, size);
     combinations.push(...driverCombos);
   }
-
   return combinations;
 }
 
@@ -120,9 +145,32 @@ function generateDriverGroups(arr, size) {
   }
   return combinations;
 }
-
-async function carpoolAssignment(eventId, requestingUserId) {
+async function getEventAttendees(eventId) {
   try {
+    const cacheKey = `event_attendees_${eventId}`;
+    const cached = getCacheAttendee(cacheKey);
+    if (cached !== null) {
+      return cached;
+    }
+    const eventAttendees = await prisma.eventHistory.findMany({
+      where: { event_id: eventId, attended: true },
+      include: {
+        user: {
+          include: { coordinates: true },
+        },
+      },
+    });
+    const result = eventAttendees ?? [];
+    cacheAttendee(cacheKey, result);
+    return result;
+  } catch (error) {
+    console.error("error fetching event attendees for event");
+    return [];
+  }
+}
+async function carpoolAssignment(eventId, requestingUserId, maxResults = 10) {
+  try {
+    clearAllCaches();
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       include: { coordinates: true },
@@ -143,50 +191,58 @@ async function carpoolAssignment(eventId, requestingUserId) {
       include: { coordinates: true },
     });
 
+    const eventAttendees = await getEventAttendees(eventId);
+    const attendeeIds = eventAttendees.map((attendee) => attendee.user_id);
+    const attendingUser = allUsers.filter((user) =>
+      attendeeIds.includes(user.id)
+    );
+
     const driverCombinations = await generateDriverCombinations(
-      allUsers,
-      eventId
+      attendingUser,
+      MAX_CAPACITY
     );
 
     const routes = [];
+    let processedCombinations = 0;
+    const maxCombinations = Math.min(100, driverCombinations.length);
 
     for (const drivers of driverCombinations) {
-      const eventAttendees = await prisma.eventHistory.findMany({
-        where: { event_id: eventId, attended: true },
-        include: {
-          user: {
-            include: { coordinates: true },
-          },
-        },
-      });
+      if (processedCombinations >= maxCombinations) {
+        break;
+      }
+      if (routes.length >= maxResults) {
+        break;
+      }
 
       const driverIds = drivers.map((driver) => driver.id);
       const allPassengers = eventAttendees
         .map((attendee) => attendee.user)
-        .filter(
-          (user) => !driverIds.includes(user.id)
-        );
+        .filter((user) => !driverIds.includes(user.id));
       const assignments = assignPassengersToDrivers(drivers, allPassengers);
 
       for (const assignment of assignments) {
-        const requestingUserIsPassenger = assignment.passengers.some((p) => p.id === requestingUserId)
+        if (routes.length >= maxResults) {
+          break;
+        }
+        const requestingUserIsPassenger = assignment.passengers.some(
+          (p) => p.id === requestingUserId
+        );
         const hasSpaceForRequestingUser =
           assignment.passengers.length < MAX_CAPACITY - 1;
-
 
         if (
           (requestingUserIsPassenger || hasSpaceForRequestingUser) &&
           assignment.passengers.length > 0
         ) {
-          let finalPassengers =[...assignment.passengers]
-          if(!requestingUserIsPassenger && hasSpaceForRequestingUser){
+          let finalPassengers = [...assignment.passengers];
+          if (!requestingUserIsPassenger && hasSpaceForRequestingUser) {
             finalPassengers.push(requestingUser);
           }
-                  const routeInfo = await routeDistance(
-          assignment.driver,
-          finalPassengers,
-          event
-        );
+          const routeInfo = await routeDistance(
+            assignment.driver,
+            finalPassengers,
+            event
+          );
           const routeScore = calculateTotalScore(
             routeInfo.distance,
             routeInfo.duration,
@@ -212,11 +268,15 @@ async function carpoolAssignment(eventId, requestingUserId) {
             route: routeInfo,
             score: routeScore,
           });
+          routes.sort((a, b) => b.score.totalScore - a.score.totalScore);
+          if (routes.length > maxResults) {
+            routes.splice(maxResults);
+          }
         }
       }
+      processedCombinations++;
     }
 
-    routes.sort((a, b) => a.score.totalScore - b.score.totalScore);
     return routes;
   } catch (error) {
     console.error("Error in carpool assignment", error);
@@ -246,13 +306,16 @@ function assignPassengersToDrivers(drivers, passengers) {
   });
 
   passengerAssignments.sort((a, b) => {
+    if (!a.closestDriver || !b.closestDriver) {
+      return 0;
+    }
     const distanceA = getDistance(a.passenger, a.closestDriver.driver);
     const distanceB = getDistance(b.passenger, b.closestDriver.driver);
     return distanceA - distanceB;
   });
 
   for (const { passenger, closestDriver } of passengerAssignments) {
-    if (closestDriver.passengers.length < MAX_CAPACITY - 1) {
+    if (closestDriver && closestDriver.passengers.length < MAX_CAPACITY - 1) {
       closestDriver.passengers.push(passenger);
     }
   }

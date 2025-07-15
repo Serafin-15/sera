@@ -47,4 +47,20 @@ router.get("/optimization/:eventId/:userId", async (request, response) => {
   }
 });
 
+router.post("/cache/clear", async (request, response) => {
+  try {
+    const { clearAllCaches } = require("../utils/cacheUtil");
+
+    clearAllCaches();
+
+    response.json({
+      message: "Cache cleared",
+    });
+  } catch (error) {
+    response.status(500).json({
+      error: "Failed to clear cache.",
+    });
+  }
+});
+
 module.exports = router;

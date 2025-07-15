@@ -24,7 +24,7 @@ function setCachedValue(cache, key, value) {
 
 function cleanupCache(cache) {
   const now = Date.now();
-  for (const [key, entry] of cache.enteries()) {
+  for (const [key, entry] of cache.entries()) {
     if (now - entry.timestamp > CACHE_TTL) {
       cache.delete(key);
     }
@@ -42,7 +42,7 @@ function cacheRoute(key, routeData) {
 }
 
 function getCacheRoute(key) {
-  getCachedValue(routeCache, key);
+  return getCachedValue(routeCache, key);
 }
 
 function cacheDistance(key, distanceData) {
@@ -50,7 +50,7 @@ function cacheDistance(key, distanceData) {
 }
 
 function getCacheDistance(key) {
-  getCachedValue(distanceCache, key);
+  return getCachedValue(distanceCache, key);
 }
 
 function cacheAttendee(key, attendeeData) {
@@ -58,7 +58,7 @@ function cacheAttendee(key, attendeeData) {
 }
 
 function getCacheAttendee(key) {
-  getCachedValue(routeCache, key);
+  return getCachedValue(attendeeCache, key);
 }
 
 function needsCleanup(cache) {
