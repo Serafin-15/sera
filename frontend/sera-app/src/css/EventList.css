@@ -26,7 +26,7 @@
 }
 
 .event-card.high-capacity {
-  animation: shake 2s ease-in-out infinite;
+  animation: shake 1s ease-in-out infinite;
   border: 3px solid #f44;
   box-shadow: 0 0 10px rgba(255, 68, 68, 0.5);
 }
@@ -41,31 +41,31 @@
   50%,
   70%,
   90% {
-    transform: translateX(-4px);
+    transform: translateX(-3px);
   }
   20%,
   40%,
   60%,
   80% {
-    transform: translateX(-4px);
+    transform: translateX(-6px);
   }
 }
 
 .event-card.medium-capacity {
   animation: pulse-yellow 1s ease-in-out infinite;
-  border: 3px solid #fa0;
-  box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+  border: 15px solid #fa0;
+  box-shadow: 0 0 30px rgba(255, 170, 0, 0.6);
 }
 
 @keyframes pulse-yellow {
   0%,
   100% {
     border: #fa0;
-    box-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
+    box-shadow: 0 0 50px rgba(255, 170, 0, 0.6);
   }
   50% {
     border-color: #fc4;
-    box-shadow: 0 0 15px rgba(255, 170, 0, 0.8);
+    box-shadow: 0 0 20px rgba(255, 170, 0, 0.8);
   }
 }
 
