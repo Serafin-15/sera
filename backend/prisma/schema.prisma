@@ -29,6 +29,8 @@ model User {
   Availablility Availability[]
   UserInterests UserInterest[]
   EventHistory  EventHistory[]
+  Friends       Friend[]       @relation("UserFriends")
+  FriendsOf     Friend[]       @relation("FriendOf")
 }
 
 model Availability {
@@ -76,5 +78,19 @@ model EventHistory{
   event    Event               @relation(fields: [event_id], references: [id])
 
   @@unique([user_id, event_id])
+}
+
+model Friend{
+  id       Int                 @id @default(autoincrement())
+  user_id  Int
+  friend_id Int
+  status   String              @default("pending")
+  created_at DateTime          @default(now())
+  updated_at DateTime          @updatedAt
+
+  user      User                    @relation("UserFriends", fields:[user_id], references: [id])
+  friend    User                    @relation("FriendOf", fields:[friend_id], references: [id])
+  
+  @@unique([user_id, friend_id])
 }
 
