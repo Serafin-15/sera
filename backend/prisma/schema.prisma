@@ -81,15 +81,15 @@ model EventHistory{
 }
 
 model Friend{
-  id       Int                 @id @default(autoincrement())
-  user_id  Int
-  friend_id Int
-  status   String              @default("pending")
+  id         Int               @id @default(autoincrement())
+  user_id    Int
+  friend_id  Int
+  status     String            @default("pending")
   created_at DateTime          @default(now())
   updated_at DateTime          @updatedAt
 
-  user      User                    @relation("UserFriends", fields:[user_id], references: [id])
-  friend    User                    @relation("FriendOf", fields:[friend_id], references: [id])
+  user      User               @relation("UserFriends", fields:[user_id], references: [id])
+  friend    User               @relation("FriendOf", fields:[friend_id], references: [id])
   
   @@unique([user_id, friend_id])
 }
