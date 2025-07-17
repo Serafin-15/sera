@@ -37,9 +37,9 @@ export default function EventList() {
       const moreEvents = await fetchMoreEvents(events.length);
       if (moreEvents.length > 0) {
         setEvents((prevEvents) => {
-          const exisitngIds = new Set(prevEvents.map((event) => event.id));
+          const exisitingIds = new Set(prevEvents.map((event) => event.id));
           const uniqueNewEvents = moreEvents.filter(
-            (event) => !exisitngIds.has(event.id)
+            (event) => !exisitingIds.has(event.id)
           );
           return [...prevEvents, ...uniqueNewEvents];
         });
@@ -78,26 +78,19 @@ export default function EventList() {
 
   const getCapacityInfo = (event) => {
     const capacityPercentage = (event.num_attending / event.capacity) * 100;
-
+    let size;
     if (capacityPercentage <= 10) {
-      return {
-        class: "low-capacity",
-        indicator: "low",
-        text: `${event.num_attending}/${event.capacity}`,
-      };
+      size = "low";
     } else if (capacityPercentage > 50) {
-      return {
-        class: "high-capacity",
-        indicator: "high",
-        text: `${event.num_attending}/${event.capacity}`,
-      };
+      size = "high";
     } else {
-      return {
-        class: "medium-capacity",
-        indicator: "medium",
-        text: `${event.num_attending}/${event.capacity}`,
-      };
+      size = "medium";
     }
+    return {
+      class: `${size}-capacity`,
+      indicator: size,
+      text: `${event.num_attending}/${event.capacity}`,
+    };
   };
   return (
     <div className="event-container">

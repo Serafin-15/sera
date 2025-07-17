@@ -25,7 +25,15 @@ const DEFAULT_WEIGHTS = {
 
 const TIME_DECAY_FACTOR = 0.5;
 const TIME_DECAY_MONTHS = 3;
+const SCORE_MULTIPLIER = 20;
+const EARTH_RADIUS = 6371
+const RADIANS = 180;
+const TRIG = 2;
 
+const PARTIAL_MULTIPLIER = 0.8
+const MS_IN_30_DAYS = 1000 * 60 * 60 * 24 * 30;
+
+const NORMALIZE_OUT_OF = 100;
 const INTEREST_CATEGORIES = ["Music", "Art", "Food", "Tech", "Sports/Fitness"];
 
 function isAvailableForEvent(event, availabilityBlock) {
@@ -61,7 +69,7 @@ function isAvailableForEvent(event, availabilityBlock) {
       } else if (overlapPercentage >= 0.5) {
         maxScore = Math.max(
           maxScore,
-          Math.floor(SCORES.AVAILABILITY_PARTIAL * 0.8)
+          Math.floor(SCORES.AVAILABILITY_PARTIAL * PARTIAL_MULTIPLIER)
         );
       } else if (overlapPercentage >= 0.25) {
         maxScore = Math.max(maxScore, SCORES.AVAILABILITY_MINIMUM);
@@ -95,17 +103,16 @@ function isDistant(userCoordinates, eventCoordinates) {
 }
 
 function calculateDistance(lat1, long1, lat2, long2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLong = ((long2 - long1) * Math.PI) / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / RADIANS;
+  const dLong = ((long2 - long1) * Math.PI) / RADIANS;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLong / 2) *
-      Math.sin(dLong / 2);
+    Math.sin(dLat / TRIG) * Math.sin(dLat / TRIG) +
+    Math.cos((lat1 * Math.PI) / RADIANS) *
+      Math.cos((lat2 * Math.PI) / RADIANS) *
+      Math.sin(dLong / TRIG) *
+      Math.sin(dLong / TRIG);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return EARTH_RADIUS * c;
 }
 
 function isInterested(event, studentInterest) {
@@ -122,14 +129,14 @@ function isInterested(event, studentInterest) {
   if (!matchingInterest) {
     return 0;
   }
-  return matchingInterest.ranking * 20;
+  return matchingInterest.ranking * SCORE_MULTIPLIER;
 }
 
 function calculateTimeDecayFactor(eventData) {
   const now = new Date();
   const eventTime = new Date(eventData);
   const monthsDiff =
-    (now.getTime() - eventTime.getTime()) / (1000 * 60 * 60 * 24 * 30);
+    (now.getTime() - eventTime.getTime()) / (MS_IN_30_DAYS);
 
   if (monthsDiff > TIME_DECAY_MONTHS) {
     return TIME_DECAY_FACTOR;
@@ -156,8 +163,8 @@ function calculateWeightedScore(
     distanceScore,
     SCORES.DISTANCE_CLOSE
   );
-  const normalizedInterest = normalizeScore(interestScore, 100);
-  const normalizedPastAttendance = normalizeScore(pastAttendanceScore, 100);
+  const normalizedInterest = normalizeScore(interestScore, NORMALIZE_OUT_OF);
+  const normalizedPastAttendance = normalizeScore(pastAttendanceScore, NORMALIZE_OUT_OF);
 
   const weightedSum =
     normalizedAvailability * weights.availability +
@@ -179,17 +186,12 @@ function calculatePastAttendanceScore(event, pastEvents) {
 
   for (const pastEvent of pastEvents) {
     const pastCategory = pastEvent.category.toLowerCase();
-    const pastTitle = pastEvent.title.toLowerCase();
     const pastDescription = (pastEvent.description ?? "").toLowerCase();
 
     const timeDecay = calculateTimeDecayFactor(pastEvent.start_date);
 
     if (eventCategory === pastCategory) {
       score += SCORES.PAST_ATTENDANCE_CATEGORY_MATCH * timeDecay;
-    }
-
-    if (eventTitle.includes(pastTitle) || pastTitle.includes(eventTitle)) {
-      score += SCORES.PAST_ATTENDANCE_SIMILAR * timeDecay;
     }
 
     const eventKeywords = eventDescription.split(" ");
@@ -204,7 +206,7 @@ function calculatePastAttendanceScore(event, pastEvents) {
 
     score += SCORES.PAST_ATTENDANCE_ATTENDED * timeDecay;
   }
-  return Math.min(score, 100);
+  return Math.min(score, NORMALIZE_OUT_OF);
 }
 function calculateTotalScore(
   availabilityScore,

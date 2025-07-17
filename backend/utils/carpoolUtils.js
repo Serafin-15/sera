@@ -13,21 +13,25 @@ const {
   getCacheAttendee,
 } = require("./cacheUtil");
 
+const EARTH_RADIUS = 6371
 const MAX_CAPACITY = 3;
+const RADIANS = 180;
+const TRIG = 2;
+const KMETER_IN_METER = 1000;
+const MINS_IN_SECONDS = 60;
 const MAPBOX_API_BASE = "https://api.mapbox.com/directions/v5/mapbox/driving";
 
 function calculateDistance(lat1, long1, lat2, long2) {
-  const R = 6371;
-  const dLat = ((lat2 - lat1) * Math.PI) / 180;
-  const dLong = ((long2 - long1) * Math.PI) / 180;
+  const dLat = ((lat2 - lat1) * Math.PI) / RADIANS;
+  const dLong = ((long2 - long1) * Math.PI) / RADIANS;
   const a =
-    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(dLong / 2) *
-      Math.sin(dLong / 2);
+    Math.sin(dLat / TRIG) * Math.sin(dLat / TRIG) +
+    Math.cos((lat1 * Math.PI) / RADIANS) *
+      Math.cos((lat2 * Math.PI) / RADIANS) *
+      Math.sin(dLong / TRIG) *
+      Math.sin(dLong / TRIG);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c;
+  return EARTH_RADIUS * c;
 }
 
 function getDistance(destination, source) {
@@ -103,11 +107,11 @@ async function routeDistance(driver, passengers, event) {
 
     const route = response.data.routes[0];
     const result = {
-      distance: Math.round(route.distance / 1000),
-      duration: Math.round(route.duration / 60),
+      distance: Math.round(route.distance / KMETER_IN_METER),
+      duration: Math.round(route.duration / MINS_IN_SECONDS),
       route: route.legs.map((leg) => ({
-        distance: Math.round(leg.distance / 1000),
-        duration: Math.round(leg.duration / 60),
+        distance: Math.round(leg.distance / KMETER_IN_METER),
+        duration: Math.round(leg.duration / MINS_IN_SECONDS),
         steps: leg.steps.map((step) => ({
           instruction: step.maneuver.instruction,
           distance: Math.round(step.distance),
