@@ -102,7 +102,7 @@ router.post("/request", requireAuth, async (request, response) => {
     const userId = request.session.userId;
 
     const friend = await prisma.user.findUnique({
-        where: { username: friendUsername }
+      where: { username: friendUsername },
     });
 
     if (!friend) {
@@ -166,36 +166,33 @@ router.put("/accept/:friendId", requireAuth, async (response, request) => {
     });
     response.json({ message: "Friend request acccepted" });
   } catch (error) {
-      response.json({ message: "Could not accept" });
+    response.json({ message: "Could not accept" });
   }
 });
 
 router.delete("/:friendId", requireAuth, async (request, response) => {
-    try{
-        const { friendId } = request.params;
-        const userId = request.session.userId;
+  try {
+    const { friendId } = request.params;
+    const userId = request.session.userId;
 
-        const friend = await prisma.friend.findFirst({
+    const friend = await prisma.friend.findFirst({
       where: {
         id: parseInt(friendId),
-        OR: [
-            { user_id: userId},
-            {friend_id: userId}
-        ]
+        OR: [{ user_id: userId }, { friend_id: userId }],
       },
     });
-        if (!friend) {
+    if (!friend) {
       response.status(404).json({ message: "Friend not found" });
     }
 
     await prisma.friend.delete({
-        where: { id: parseInt(friendId)}
+      where: { id: parseInt(friendId) },
     });
 
-    response.json({message: "Friend removed"})
-    } catch (error) {
-        response.status(500).json({ message: "Error removing friend"})
-    }
-})
+    response.json({ message: "Friend removed" });
+  } catch (error) {
+    response.status(500).json({ message: "Error removing friend" });
+  }
+});
 
 module.exports = router;

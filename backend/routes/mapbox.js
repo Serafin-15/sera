@@ -5,6 +5,10 @@ const router = express.Router();
 
 const MAPBOX_API_BASE = "https://api.mapbox.com/directions/v5/mapbox/driving";
 
+const SECOND_IN_HOUR = 3600;
+const MINS_IN_HOUR = 60;
+const METERS_IN_MILE = 0.000623;
+
 router.get("/directions", async (request, response) => {
   try {
     const { origin, destination } = request.query;
@@ -49,19 +53,16 @@ router.get("/directions", async (request, response) => {
 });
 
 function formatDuration(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
+  const hours = Math.floor(seconds / SECOND_IN_HOUR);
+  const minutes = Math.floor((seconds % SECOND_IN_HOUR) / MINS_IN_HOUR);
   if (hours > 0) {
     return `${hours} h ${minutes} m`;
   }
-
   return `${minutes} m`;
 }
 
 function formatDistance(meters) {
-  const miles = meters * 0.000623;
-
+  const miles = meters * METERS_IN_MILE;
   if (miles >= 1) {
     return `${miles.toFixed(1)} mi`;
   }
