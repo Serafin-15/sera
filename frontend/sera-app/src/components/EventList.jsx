@@ -11,16 +11,18 @@ export default function EventList() {
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadInitialEvents = async () => {
       setLoading(true);
+      setError(null);
       try {
         const fetchedEvents = await fetchEvents();
         setEvents(fetchedEvents);
-        setHasMoreEvents(fetchedEvents.length === 6);
+        setHasMoreEvents(fetchedEvents.length >= 6);
       } catch (error) {
-        console.error("Failed to load events:", error);
+        setError("Failed to load events.");
       } finally {
         setLoading(false);
       }
@@ -41,12 +43,12 @@ export default function EventList() {
           );
           return [...prevEvents, ...uniqueNewEvents];
         });
-        setHasMoreEvents(moreEvents.length === 6);
+        setHasMoreEvents(moreEvents.length >= 6);
       }
     } catch (error) {
-      console.error("Failed to load events: ", error);
+      setError("Failed to load more events.");
     } finally {
-      setLoading(false);
+      setLoadingMore(false);
     }
   };
 
@@ -107,6 +109,8 @@ export default function EventList() {
       </div>
       {loading ? (
         <p>Loading events..</p>
+      ) : error ? (
+        <p className="error-message">{error}</p>
       ) : (
         <>
           <div className="search-section">
@@ -139,37 +143,43 @@ export default function EventList() {
             {filteredEvents.length > 0 ? (
               filteredEvents.map((event) => {
                 const capacityInfo = getCapacityInfo(event);
-                return(
-                  <div key={event.id} className={`event-card ${capacityInfo.class}`}>
-                  <div className="event-image-container">
-                    <img
-                      className="event-image"
-                      src={event.image}
-                      alt={event.title}
-                      onError={(e) => {
-                        e.target.src =
-                          "https://picsum.photos/200/300?random=259";
-                      }}
-                    />
-                    <div className="event-category">{event.category}</div>
-                    <div className={`capacity-indicator ${capacityInfo.indicator}`}>
-                    {capacityInfo.text}</div> 
-                  </div>
-
-                  <div className="event-content">
-                    <h2 className="event-card-title">{event.title}</h2>
-                    <div className="event-actions">
-                      <button
-                        className="detail-btn"
-                        onClick={() => openModal(event)}
+                return (
+                  <div
+                    key={event.id}
+                    className={`event-card ${capacityInfo.class}`}
+                  >
+                    <div className="event-image-container">
+                      <img
+                        className="event-image"
+                        src={event.image}
+                        alt={event.title}
+                        onError={(e) => {
+                          e.target.src =
+                            "https://picsum.photos/200/300?random=259";
+                        }}
+                      />
+                      <div className="event-category">{event.category}</div>
+                      <div
+                        className={`capacity-indicator ${capacityInfo.indicator}`}
                       >
-                        View Details
-                      </button>
+                        {capacityInfo.text}
+                      </div>
+                    </div>
+
+                    <div className="event-content">
+                      <h2 className="event-card-title">{event.title}</h2>
+                      <div className="event-actions">
+                        <button
+                          className="detail-btn"
+                          onClick={() => openModal(event)}
+                        >
+                          View Details
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                )
-})
+                );
+              })
             ) : (
               <div className="no-event">
                 <p>No events found that match your search criteria!</p>
