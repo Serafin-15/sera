@@ -123,7 +123,9 @@ router.post("/request", requireAuth, async (request, response) => {
     });
 
     if (exisitingFriend) {
-      return response.status(400).json({ message: "Friend request already sent" });
+      return response
+        .status(400)
+        .json({ message: "Friend request already sent" });
     }
 
     const newFriend = await prisma.friend.create({

@@ -2,7 +2,7 @@ const express = require("express");
 const { PrismaClient } = require("../generated/prisma");
 const PrivacyService = require("../service/privacyService");
 
-const privacyService = new PrivacyService;
+const privacyService = new PrivacyService();
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -18,11 +18,15 @@ const requireAuth = (request, response, next) => {
 
 router.get("/settings", requireAuth, async (request, response) => {
   try {
-   let settings = await privacyService.getPrivacySettings(request.session.userId);
+    let settings = await privacyService.getPrivacySettings(
+      request.session.userId
+    );
 
-   if(!settings){
-    settings = await privacyService.createPrivacySettings(request.session.userId);
-   }
+    if (!settings) {
+      settings = await privacyService.createPrivacySettings(
+        request.session.userId
+      );
+    }
     return response.json({ settings });
   } catch (error) {
     console.error("Error getting privacy settings", error);
@@ -41,13 +45,16 @@ router.put("/settings", requireAuth, async (request, response) => {
       isAnon,
       anonUsername,
     } = request.body;
-    const settings = await privacyService.updatePrivacySettings(request.session.userId, {
-      profileVisibility,
-      friendVisibility,
-      eventVisibility,
-      isAnon,
-      anonUsername,
-    })
+    const settings = await privacyService.updatePrivacySettings(
+      request.session.userId,
+      {
+        profileVisibility,
+        friendVisibility,
+        eventVisibility,
+        isAnon,
+        anonUsername,
+      }
+    );
     response.json({ settings, message: "Settings were updated" });
   } catch (error) {
     console.error("Error updating privacy settings", error);
@@ -67,36 +74,47 @@ router.post("/block/:userId", requireAuth, async (request, response) => {
       });
     }
 
-    const existingBlock = await prisma.blockedUser.findFirst({
-      where: {
-        userId: request.session.userId,
-        blockedUserId: userToBlockId,
-      },
-    });
-
-    await prisma.friend.deleteMany({
-      where: {
-        OR: [
-          {
-            user_id: request.session.userId,
-            friend_id: userToBlockId,
-          },
-          {
-            user_id: userToBlockId,
-            friend_id: request.session.userId,
-          },
-        ],
-      },
-    });
-
-    response.json({
-      sucess: true,
-      message: "User sucessfully blocked",
-    });
+    const result = await privacyService.blockUser(
+      request.session.userId,
+      userToBlockId
+    );
+    response.json(result);
   } catch (error) {
     console.error("Error blocking user", error);
     response.status(500).json({
       message: "Error blocking user!",
+    });
+  }
+});
+
+router.delete("/block/:userId", requireAuth, async (request, response) => {
+  try {
+    const userToUnblockId = parseInt(request.params.userId);
+
+    const result = await privacyService.unblockUser(
+      request.session.userId,
+      userToUnblockId
+    );
+    response.json(result);
+  } catch (error) {
+    console.error("Error unblocking user", error);
+    response.status(500).json({
+      message: "Error unblocking user!",
+    });
+  }
+});
+
+router.get("/blocked", requireAuth, async (request, response) => {
+  try {
+    const blockedUsers = await privacyService.getBlockedUsers(
+      request.session.userId
+    );
+
+    response.json({ blockedUsers });
+  } catch (error) {
+    console.error("Error getting blocked users", error);
+    response.status(500).json({
+      message: "Error getting blocked users!",
     });
   }
 });
