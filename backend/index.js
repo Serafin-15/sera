@@ -10,6 +10,7 @@ const mapboxRoutes = require("./routes/mapbox");
 const rankRoutes = require("./routes/ranking");
 const carpoolRoutes = require("./routes/carpool");
 const friendRoutes = require("./routes/friend");
+const privacyRoutes = require("./routes/privacy");
 
 app.use(express.json());
 app.use(
@@ -33,6 +34,7 @@ app.use("/api", mapboxRoutes);
 app.use("/api", rankRoutes);
 app.use("/api", carpoolRoutes);
 app.use("/friend", friendRoutes);
+app.use("/privacy", privacyRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
