@@ -1,5 +1,8 @@
 const express = require("express");
 const { PrismaClient } = require("../generated/prisma");
+const PrivacyService = require("../service/privacyService");
+
+const privacyService = new PrivacyService;
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -15,24 +18,11 @@ const requireAuth = (request, response, next) => {
 
 router.get("/settings", requireAuth, async (request, response) => {
   try {
-    const settings = await prisma.userPrivacySettings.findUnique({
-      where: { userId: request.session.userId },
-    });
+   let settings = await privacyService.getPrivacySettings(request.session.userId);
 
-    if (!settings) {
-      const defaultSettings = await prisma.userPrivacySettings.create({
-        data: {
-          userId: request.session.userId,
-          profileVisibility: "friends_only",
-          friendVisibility: "friend_only",
-          eventVisibility: "friend_only",
-          isAnon: false,
-        },
-      });
-      return response.json({
-        settings: defaultSettings,
-      });
-    }
+   if(!settings){
+    settings = await privacyService.createPrivacySettings(request.session.userId);
+   }
     return response.json({ settings });
   } catch (error) {
     console.error("Error getting privacy settings", error);
@@ -51,24 +41,13 @@ router.put("/settings", requireAuth, async (request, response) => {
       isAnon,
       anonUsername,
     } = request.body;
-    const settings = await prisma.userPrivacySettings.upsert({
-      where: { userId: request.session.userId },
-      update: {
-        profileVisibility,
-        friendVisibility,
-        eventVisibility,
-        isAnon,
-        anonUsername,
-      },
-      create: {
-        userId: request.session.userId,
-        profileVisibility: profileVisibility || "friends_only",
-        friendVisibility: friendVisibility || "friends_only",
-        eventVisibility: eventVisibility || "friends_only",
-        isAnon: isAnon || false,
-        anonUsername,
-      },
-    });
+    const settings = await privacyService.updatePrivacySettings(request.session.userId, {
+      profileVisibility,
+      friendVisibility,
+      eventVisibility,
+      isAnon,
+      anonUsername,
+    })
     response.json({ settings, message: "Settings were updated" });
   } catch (error) {
     console.error("Error updating privacy settings", error);
@@ -78,11 +57,11 @@ router.put("/settings", requireAuth, async (request, response) => {
   }
 });
 
-router.post("block/:userId", requireAuth, async (request, response) => {
+router.post("/block/:userId", requireAuth, async (request, response) => {
   try {
     const userToBlockId = parseInt(request.params.userId);
 
-    if (userToBlock === request.session.userId) {
+    if (userToBlockId === request.session.userId) {
       return response.status(400).json({
         message: "Can't block yourself",
       });
@@ -94,12 +73,6 @@ router.post("block/:userId", requireAuth, async (request, response) => {
         blockedUserId: userToBlockId,
       },
     });
-
-    if (existingBlock) {
-      return response.status(400).json({
-        message: "Can't block someon that is already blocked",
-      });
-    }
 
     await prisma.friend.deleteMany({
       where: {
@@ -118,7 +91,7 @@ router.post("block/:userId", requireAuth, async (request, response) => {
 
     response.json({
       sucess: true,
-      message: "",
+      message: "User sucessfully blocked",
     });
   } catch (error) {
     console.error("Error blocking user", error);

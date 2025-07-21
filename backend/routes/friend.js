@@ -54,7 +54,7 @@ router.get("/", requireAuth, async (request, response) => {
           id: friend.user.id,
           username: friend.user.username,
           role: friend.user.role,
-          friendId: user.id,
+          friendId: friend.id,
         };
       }
     });
@@ -106,11 +106,11 @@ router.post("/request", requireAuth, async (request, response) => {
     });
 
     if (!friend) {
-      response.status(404).json({ message: "User not found" });
+      return response.status(404).json({ message: "User not found" });
     }
 
     if (friend === userId) {
-      response.status(400).json({ message: "Can't add yourself" });
+      return response.status(400).json({ message: "Can't add yourself" });
     }
 
     const exisitingFriend = await prisma.friend.findFirst({
@@ -123,7 +123,7 @@ router.post("/request", requireAuth, async (request, response) => {
     });
 
     if (exisitingFriend) {
-      response.status(400).json({ message: "Friend request already sent" });
+      return response.status(400).json({ message: "Friend request already sent" });
     }
 
     const newFriend = await prisma.friend.create({
@@ -144,7 +144,7 @@ router.post("/request", requireAuth, async (request, response) => {
   }
 });
 
-router.put("/accept/:friendId", requireAuth, async (response, request) => {
+router.put("/accept/:friendId", requireAuth, async (request, response) => {
   try {
     const { friendId } = request.params;
     const userId = request.session.userId;
@@ -158,7 +158,7 @@ router.put("/accept/:friendId", requireAuth, async (response, request) => {
     });
 
     if (!friend) {
-      response.status(404).json({ message: "Friend request not found" });
+      return response.status(404).json({ message: "Friend request not found" });
     }
     await prisma.friend.update({
       where: { id: parseInt(friendId) },
@@ -182,7 +182,7 @@ router.delete("/:friendId", requireAuth, async (request, response) => {
       },
     });
     if (!friend) {
-      response.status(404).json({ message: "Friend not found" });
+      return response.status(404).json({ message: "Friend not found" });
     }
 
     await prisma.friend.delete({
