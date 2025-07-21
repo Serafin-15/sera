@@ -119,4 +119,29 @@ router.get("/blocked", requireAuth, async (request, response) => {
   }
 });
 
+router.get(
+  "/friend/:friendId/settings",
+  requireAuth,
+  async (request, response) => {
+    try {
+      const friendId = parseInt(request.params.friendId);
+      const settings = await privacyService.getFriendPrivacySettings(
+        request.session.userId,
+        friendId
+      );
+
+      if (!settings) {
+        return response.status(404).json({
+          message: "Friend not found or settings not accessible",
+        });
+      }
+      response.json({ settings });
+    } catch (error) {
+      console.error("Error getting friend privacy settings", error);
+      response.status(500).json({
+        message: "Error getting friend privacy settings",
+      });
+    }
+  }
+);
 module.exports = router;
