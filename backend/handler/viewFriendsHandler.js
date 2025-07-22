@@ -4,18 +4,18 @@ const { PrismaClient } = require("../generated/prisma");
 
 const prisma = new PrismaClient();
 
-class ViewProfileHandler extends ActionHandler {
+class ViewFriendsHandler extends ActionHandler {
   constructor() {
-    super("view_profile");
+    super("view_friends");
   }
 
   async processUserLevels(request) {
     if (request.isSelfRequest()) {
-      const userData = await this.getUserData(request.targetId);
+      const friendData = await this.getUserData(request.targetId);
       return {
         handled: true,
-        response: PrivacyResponse.success(userData).setHandler(
-          "ViewProfileHandler-Self"
+        response: PrivacyResponse.success(friendData).setHandler(
+          "ViewFriendsHandler-Self"
         ),
       };
     }
@@ -25,7 +25,7 @@ class ViewProfileHandler extends ActionHandler {
       return {
         handled: true,
         response: PrivacyResponse.failure("Access blocked").setHandler(
-          "ViewProfileHandler-Blocked"
+          "ViewFriendsHandler-Blocked"
         ),
       };
     }
@@ -35,32 +35,18 @@ class ViewProfileHandler extends ActionHandler {
       return {
         handled: true,
         response: PrivacyResponse.failure("User not found").setHandler(
-          "ViewProfileHandler-NotFound"
+          "ViewFriendsHandler-NotFound"
         ),
       };
     }
 
-    if (privacySettings.isAnon) {
-      const anonData = {
-        id: request.targetId,
-        usernam: privacySettings.anonUsername || "Anonymous User",
-        isAnone: true,
-      };
-      return {
-        handled: true,
-        response: PrivacyResponse.anonymous(
-          anonData,
-          privacySettings.anonUsername
-        ).setHandler("ViewProfileHandler-Anonymous"),
-      };
-    }
-    switch (privacySettings.profileVisibility) {
+    switch (privacySettings.friendVisibility) {
       case "public":
-        const publicData = await this.getUserData(request.targetId);
+        const publicFriends = await this.getFriendsData(request.targetId);
         return {
           handled: true,
-          response: PrivacyResponse.success(publicData).setHandler(
-            "ViewProfileHandler-Public"
+          response: PrivacyResponse.success(publicFriends).setHandler(
+            "ViewFriendsHandler-Public"
           ),
         };
       case "friend_only":
@@ -70,7 +56,7 @@ class ViewProfileHandler extends ActionHandler {
           return {
             handled: true,
             response: PrivacyResponse.success(friendData).setHandler(
-              "ViewProfileHandler-Friends"
+              "ViewFriendsHandler-Friends"
             ),
           };
         }
@@ -79,24 +65,47 @@ class ViewProfileHandler extends ActionHandler {
       case "private":
         return {
           handled: true,
-          response: PrivacyResponse.success("Profile is private").setHandler(
-            "ViewProfileHandler-Private"
-          ),
+          response: PrivacyResponse.success(
+            "Friendslist is private"
+          ).setHandler("ViewFriendsHandler-Private"),
         };
     }
 
     return {
       handled: true,
       response: PrivacyResponse.success("Access denied").setHandler(
-        "ViewProfileHandler-Default"
+        "ViewFriendsHandler-Default"
       ),
     };
   }
-  async getUserData(userId) {
-    return await prisma.userPrivacySettings.findUnique({
-      where: { userId },
+
+  async getFriendsData(userId) {
+    const friendships = await prisma.friend.findMany({
+      where: {
+        OR: [
+          { user_id: userId, status: "accepted " },
+          { friend_id: userId, status: "accepted " },
+        ],
+      },
+      include: {
+        user: {
+          select: { id: true, username: true, role: true },
+        },
+        friend: {
+          select: { id: true, username: true, role: true },
+        },
+      },
+    });
+
+    return friendships.map((friendship) => {
+      if (friendship.user_id === userId) {
+        return friendship.friend;
+      } else {
+        return friendship.user;
+      }
     });
   }
+
   async getPrivacySettings(userId) {
     return await prisma.userPrivacySettings.findUnique({
       where: { userId },
@@ -146,4 +155,4 @@ class ViewProfileHandler extends ActionHandler {
   }
 }
 
-module.exports = ViewProfileHandler;
+module.exports = ViewFriendsHandler;
