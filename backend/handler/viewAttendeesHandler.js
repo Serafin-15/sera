@@ -10,34 +10,37 @@ class viewAttendeesHandler extends ActionHandler {
   }
 
   async processUserLevels(request) {
-    const eventId = request.getContext('eventId')
-    if(!eventId){
-        return {
-            handled: true,
-            response: PrivacyResponse.failure("Event ID not provided").setHandler(
+    const eventId = request.getContext("eventId");
+    if (!eventId) {
+      return {
+        handled: true,
+        response: PrivacyResponse.failure("Event ID not provided").setHandler(
           "ViewAttendeesHandler-NoEvent"
-        )
-        }
+        ),
+      };
     }
     const event = await this.getEvent(eventId);
-    if(!event){
-        return{
-            handled: true,
-            response: PrivacyResponse.failure("Event not found").setHandler(
+    if (!event) {
+      return {
+        handled: true,
+        response: PrivacyResponse.failure("Event not found").setHandler(
           "ViewAttendeesHandler-EventNotFound"
-        )
-        }
+        ),
+      };
     }
-    if(request.requesterId === event.creatorId){
-        const attendees = await this.getAttendees(eventId);
-        return{
-            handled: true,
-            response: PrivacyResponse.success(attendees).setHandler(
+    if (request.requesterId === event.creatorId) {
+      const attendees = await this.getAttendees(eventId);
+      return {
+        handled: true,
+        response: PrivacyResponse.success(attendees).setHandler(
           "ViewAttendeesHandler-Owner"
-        )
-        }
+        ),
+      };
     }
-    const isBlocked = await this.checkBlockedStatus(request.requesterId, event.creatorId);
+    const isBlocked = await this.checkBlockedStatus(
+      request.requesterId,
+      event.creatorId
+    );
     if (isBlocked) {
       return {
         handled: true,
@@ -47,9 +50,9 @@ class viewAttendeesHandler extends ActionHandler {
       };
     }
 
-    if(event.isPublic){
-        const attendees = await this.getAttendees(eventId);
-        return {
+    if (event.isPublic) {
+      const attendees = await this.getAttendees(eventId);
+      return {
         handled: true,
         response: PrivacyResponse.success(attendees).setHandler(
           "ViewAttendeesHandler-Public"
@@ -57,10 +60,13 @@ class viewAttendeesHandler extends ActionHandler {
       };
     }
 
-    const areFriends = await this.checkFriendship(request.requesterId, event.creatorId);
-    if(areFriends){
-        const attendees = await this.getAttendees(eventId);
-        return {
+    const areFriends = await this.checkFriendship(
+      request.requesterId,
+      event.creatorId
+    );
+    if (areFriends) {
+      const attendees = await this.getAttendees(eventId);
+      return {
         handled: true,
         response: PrivacyResponse.success(attendees).setHandler(
           "ViewAttendeesHandler-Friends"
@@ -68,10 +74,13 @@ class viewAttendeesHandler extends ActionHandler {
       };
     }
 
-    const isAttending = await this.checkAttendance(request.requesterId, eventId);
-    if(isAttending){
-        const attendees = await this.getAttendees(eventId);
-        return {
+    const isAttending = await this.checkAttendance(
+      request.requesterId,
+      eventId
+    );
+    if (isAttending) {
+      const attendees = await this.getAttendees(eventId);
+      return {
         handled: true,
         response: PrivacyResponse.success(attendees).setHandler(
           "ViewAttendeesHandler-Attendee"
@@ -86,36 +95,38 @@ class viewAttendeesHandler extends ActionHandler {
     };
   }
 
-  async getEvent(eventId){
+  async getEvent(eventId) {
     return await prisma.event.findUnique({
-        where: { id: eventId },
-        include: {
-            creator: true
-        }
+      where: { id: eventId },
+      include: {
+        creator: true,
+      },
     });
   }
 
-  async getAttendees(eventId){
+  async getAttendees(eventId) {
     const attendances = await prisma.eventAttendance.findMany({
-        where: { eventId },
-        include: {
-            user: {
-                select: {
-                    id: true,
-                    username: true,
-                    role: true
-                }
-            }
-        }
+      where: { eventId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            username: true,
+            role: true,
+          },
+        },
+      },
     });
 
-    return attendances.map(attendance => ({
-        ...attendance,
-        user: attendance.isAnon ? {
+    return attendances.map((attendance) => ({
+      ...attendance,
+      user: attendance.isAnon
+        ? {
             id: attendance.user.id,
-            username: attendance.anonUsername || 'Annonymous user',
-            isAnon: true
-        } : attendance.user
+            username: attendance.anonUsername || "Annonymous user",
+            isAnon: true,
+          }
+        : attendance.user,
     }));
   }
 
@@ -162,17 +173,17 @@ class viewAttendeesHandler extends ActionHandler {
     return !!friendship;
   }
 
-  async checkAttendance(userId, eventId){
+  async checkAttendance(userId, eventId) {
     const attendance = await prisma.eventAttendance.findUnique({
-        where: {
-            userId_eventId: {
-                userId,
-                eventId
-            }
-        }
+      where: {
+        userId_eventId: {
+          userId,
+          eventId,
+        },
+      },
     });
 
-    return !!attendance
+    return !!attendance;
   }
 }
 
