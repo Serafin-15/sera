@@ -1,5 +1,8 @@
 const express = require("express");
 const { PrismaClient } = require("../generated/prisma");
+const PrivacyService = require("../service/privacyService");
+
+const privacyService = new PrivacyService();
 
 const prisma = new PrismaClient();
 const router = express.Router();
@@ -15,23 +18,14 @@ const requireAuth = (request, response, next) => {
 
 router.get("/settings", requireAuth, async (request, response) => {
   try {
-    const settings = await prisma.userPrivacySettings.findUnique({
-      where: { userId: request.session.userId },
-    });
+    let settings = await privacyService.getPrivacySettings(
+      request.session.userId
+    );
 
     if (!settings) {
-      const defaultSettings = await prisma.userPrivacySettings.create({
-        data: {
-          userId: request.session.userId,
-          profileVisibility: "friends_only",
-          friendVisibility: "friend_only",
-          eventVisibility: "friend_only",
-          isAnon: false,
-        },
-      });
-      return response.json({
-        settings: defaultSettings,
-      });
+      settings = await privacyService.createPrivacySettings(
+        request.session.userId
+      );
     }
     return response.json({ settings });
   } catch (error) {
@@ -51,24 +45,16 @@ router.put("/settings", requireAuth, async (request, response) => {
       isAnon,
       anonUsername,
     } = request.body;
-    const settings = await prisma.userPrivacySettings.upsert({
-      where: { userId: request.session.userId },
-      update: {
+    const settings = await privacyService.updatePrivacySettings(
+      request.session.userId,
+      {
         profileVisibility,
         friendVisibility,
         eventVisibility,
         isAnon,
         anonUsername,
-      },
-      create: {
-        userId: request.session.userId,
-        profileVisibility: profileVisibility || "friends_only",
-        friendVisibility: friendVisibility || "friends_only",
-        eventVisibility: eventVisibility || "friends_only",
-        isAnon: isAnon || false,
-        anonUsername,
-      },
-    });
+      }
+    );
     response.json({ settings, message: "Settings were updated" });
   } catch (error) {
     console.error("Error updating privacy settings", error);
@@ -78,48 +64,21 @@ router.put("/settings", requireAuth, async (request, response) => {
   }
 });
 
-router.post("block/:userId", requireAuth, async (request, response) => {
+router.post("/block/:userId", requireAuth, async (request, response) => {
   try {
     const userToBlockId = parseInt(request.params.userId);
 
-    if (userToBlock === request.session.userId) {
+    if (userToBlockId === request.session.userId) {
       return response.status(400).json({
         message: "Can't block yourself",
       });
     }
 
-    const existingBlock = await prisma.blockedUser.findFirst({
-      where: {
-        userId: request.session.userId,
-        blockedUserId: userToBlockId,
-      },
-    });
-
-    if (existingBlock) {
-      return response.status(400).json({
-        message: "Can't block someon that is already blocked",
-      });
-    }
-
-    await prisma.friend.deleteMany({
-      where: {
-        OR: [
-          {
-            user_id: request.session.userId,
-            friend_id: userToBlockId,
-          },
-          {
-            user_id: userToBlockId,
-            friend_id: request.session.userId,
-          },
-        ],
-      },
-    });
-
-    response.json({
-      sucess: true,
-      message: "",
-    });
+    const result = await privacyService.blockUser(
+      request.session.userId,
+      userToBlockId
+    );
+    response.json(result);
   } catch (error) {
     console.error("Error blocking user", error);
     response.status(500).json({
@@ -128,4 +87,61 @@ router.post("block/:userId", requireAuth, async (request, response) => {
   }
 });
 
+router.delete("/block/:userId", requireAuth, async (request, response) => {
+  try {
+    const userToUnblockId = parseInt(request.params.userId);
+
+    const result = await privacyService.unblockUser(
+      request.session.userId,
+      userToUnblockId
+    );
+    response.json(result);
+  } catch (error) {
+    console.error("Error unblocking user", error);
+    response.status(500).json({
+      message: "Error unblocking user!",
+    });
+  }
+});
+
+router.get("/blocked", requireAuth, async (request, response) => {
+  try {
+    const blockedUsers = await privacyService.getBlockedUsers(
+      request.session.userId
+    );
+
+    response.json({ blockedUsers });
+  } catch (error) {
+    console.error("Error getting blocked users", error);
+    response.status(500).json({
+      message: "Error getting blocked users!",
+    });
+  }
+});
+
+router.get(
+  "/friend/:friendId/settings",
+  requireAuth,
+  async (request, response) => {
+    try {
+      const friendId = parseInt(request.params.friendId);
+      const settings = await privacyService.getFriendPrivacySettings(
+        request.session.userId,
+        friendId
+      );
+
+      if (!settings) {
+        return response.status(404).json({
+          message: "Friend not found or settings not accessible",
+        });
+      }
+      response.json({ settings });
+    } catch (error) {
+      console.error("Error getting friend privacy settings", error);
+      response.status(500).json({
+        message: "Error getting friend privacy settings",
+      });
+    }
+  }
+);
 module.exports = router;
