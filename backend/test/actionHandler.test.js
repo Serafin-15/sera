@@ -26,8 +26,8 @@ describe("ActionHandler", () => {
       const differentRequest = new PrivacyRequest(
       "user123",
       "user456",
-      "view_friends",
-      "friends_viewing")
+      "view_attendees",
+      "attendees_viewing")
       expect(handler.canHandle(differentRequest)).toBe(false);
   });
 
@@ -36,8 +36,8 @@ describe("ActionHandler", () => {
       const differentRequest = new PrivacyRequest(
       "user123",
       "user456",
-      "view_friends",
-      "friends_viewing");
+      "view_attendees",
+      "attendees_viewing");
       const result = await handler.process(differentRequest)  
       expect(result.handled).toBe(false);
       expect(result.response).toBeNull();
