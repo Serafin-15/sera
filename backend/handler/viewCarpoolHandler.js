@@ -6,7 +6,7 @@ const CarpoolService = require("../service/carpoolService");
 const prisma = new PrismaClient();
 const carpoolService = new CarpoolService();
 
-class viewAttendeesHandler extends ActionHandler {
+class viewCarpoolHandler extends ActionHandler {
   constructor() {
     super("view_carpool");
   }
@@ -91,4 +91,4 @@ class viewAttendeesHandler extends ActionHandler {
   }
 }
 
-module.exports = viewAttendeesHandler;
+module.exports = viewCarpoolHandler;

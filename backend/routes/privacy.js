@@ -1,12 +1,10 @@
 const express = require("express");
-const { PrismaClient } = require("../generated/prisma");
 const PrivacyService = require("../service/privacyService");
 const PrivacyRequest = require("../handler/privacyRequest");
 const PrivacyHandlerCreator = require("../handler/privacyActionHandler");
 
 const privacyService = new PrivacyService();
 
-const prisma = new PrismaClient();
 const router = express.Router();
 
 const requireAuth = (request, response, next) => {

@@ -31,7 +31,7 @@ app.use(
 app.use(authRoutes);
 app.use("/api", mapboxRoutes);
 app.use("/api", rankRoutes);
-app.use("/api", carpoolRoutes);
+app.use("/carpool", carpoolRoutes);
 app.use("/privacy", privacyRoutes);
 
 app.listen(PORT, () => {
