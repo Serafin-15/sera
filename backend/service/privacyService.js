@@ -85,7 +85,7 @@ class PrivacyService {
       if (!event) {
         return false;
       }
-      if (!viewerId === event.creatorId) {
+      if (viewerId === event.creatorId) {
         return true;
       }
       if (event.isPublic) {
@@ -189,10 +189,10 @@ class PrivacyService {
         select: { username: true },
       });
 
-      return user ? usernname : "Unknown User";
+      return user ? user.username : "Unknown User";
     } catch (error) {
       console.error("Error getting display name: ", error);
-      return "Unkown user";
+      return "Unknown user";
     }
   }
 

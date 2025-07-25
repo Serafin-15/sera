@@ -31,7 +31,6 @@ describe("ActionHandler", () => {
       expect(handler.canHandle(differentRequest)).toBe(false);
   });
 
-
     test("should return unhandled when action does not match", async() => {
       const differentRequest = new PrivacyRequest(
       "user123",
