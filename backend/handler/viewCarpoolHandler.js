@@ -1,14 +1,14 @@
 const ActionHandler = require("./actionHandler");
 const PrivacyResponse = require("./privacyResponse");
 const { PrismaClient } = require("../generated/prisma");
-const PrivacyService = require("../service/privacyService");
+const CarpoolService = require("../service/carpoolService");
 
 const prisma = new PrismaClient();
-const privacyService = new PrivacyService();
+const carpoolService = new CarpoolService();
 
 class viewAttendeesHandler extends ActionHandler {
   constructor() {
-    super("view_attendees");
+    super("view_carpool");
   }
 
   async processUserLevels(request) {
@@ -17,7 +17,7 @@ class viewAttendeesHandler extends ActionHandler {
       return {
         handled: true,
         response: PrivacyResponse.failure("Event ID not provided").setHandler(
-          "ViewAttendeesHandler-NoEvent"
+          "ViewCarpoolHandler-NoEvent"
         ),
       };
     }
@@ -26,12 +26,12 @@ class viewAttendeesHandler extends ActionHandler {
       return {
         handled: true,
         response: PrivacyResponse.failure("Event not found").setHandler(
-          "ViewAttendeesHandler-EventNotFound"
+          "ViewCarpoolHandler-EventNotFound"
         ),
       };
     }
 
-    const canView = await privacyService.canViewEventAttendees(
+    const canView = await carpoolService.canViewCarpoolParticipants(
       request.requesterId,
       eventId
     );
@@ -40,26 +40,25 @@ class viewAttendeesHandler extends ActionHandler {
       return {
         handled: true,
         response: PrivacyResponse.failure("Access Denied").setHandler(
-          "ViewAttendeesHandler-Denied"
+          "ViewCarpoolHandler-Denied"
         ),
       };
     }
 
-    const attendees = await this.getAttendees(eventId);
-    const filteredAttendees = await privacyService.filterAttendeesList(
+    const carpoolParticipants = await this.getCarpoolParticipants(eventId);
+    const filteredParticipants = await carpoolService.filterCarpoolParticipants(
       request.requesterId,
-      attendees
+      carpoolParticipants
     );
 
-    let handlerType = this.determineHandlerType(request.requesterId, event);
+    const handlerType = this.determineHandlerType(request.requesterId, event);
 
     return {
       handled: true,
       response:
-        PrivacyResponse.success(filteredAttendees).setHandler(handlerType),
+        PrivacyResponse.success(filteredParticipants).setHandler(handlerType),
     };
   }
-
   determineHandlerType(requesterId, event) {
     let accessType;
 
@@ -73,16 +72,15 @@ class viewAttendeesHandler extends ActionHandler {
 
     switch (accessType) {
       case "OWNER":
-        return "ViewAttendeesHandler-Owner";
+        return "ViewCarpoolHandler-Owner";
       case "PUBLIC":
-        return "ViewAttendeesHandler-Public";
+        return "ViewCarpoolHandler-Public";
       case "ATTENDEE":
-        return "ViewAttendeesHandler-Attendee";
+        return "ViewCarpoolHandler-Attendee";
       default:
-        return "ViewAttendeesHandler-Default";
+        return "ViewCarpoolHandler-Default";
     }
   }
-
   async getEvent(eventId) {
     return await prisma.event.findUnique({
       where: { id: eventId },
@@ -90,32 +88,6 @@ class viewAttendeesHandler extends ActionHandler {
         creator: true,
       },
     });
-  }
-
-  async getAttendees(eventId) {
-    const attendances = await prisma.eventAttendance.findMany({
-      where: { eventId },
-      include: {
-        user: {
-          select: {
-            id: true,
-            username: true,
-            role: true,
-          },
-        },
-      },
-    });
-
-    return attendances.map((attendance) => ({
-      ...attendance,
-      user: attendance.isAnon
-        ? {
-            id: attendance.user.id,
-            username: attendance.anonUsername || "Annonymous user",
-            isAnon: true,
-          }
-        : attendance.user,
-    }));
   }
 }
 
