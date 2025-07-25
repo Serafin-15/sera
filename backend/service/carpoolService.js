@@ -15,7 +15,7 @@ class CarpoolService {
       if (!event) {
         return false;
       }
-      if (viewerId === event.creatorId) {
+      if (userId === event.creatorId) {
         return true;
       }
       if (event.isPublic) {
@@ -37,7 +37,7 @@ class CarpoolService {
     }
   }
 
-  async getCarppolParticipants(eventId) {
+  async getCarpoolParticipants(eventId) {
     try {
       const attendances = await this.prisma.eventAttendance.findMany({
         where: { eventId },
@@ -56,24 +56,25 @@ class CarpoolService {
       const participants = [];
 
       for (const attendance of attendances) {
-        const privacySettings = this.prisma.userPrivacySettings.findUnique({
-          where: { userId: attendance.user.id },
-        });
-
+        const privacySettings =
+          await this.prisma.userPrivacySettings.findUnique({
+            where: { userId: attendance.user.id },
+          });
         if (!privacySettings || !privacySettings.isAnon) {
           participants.push({
             id: attendance.id,
             userId: attendance.user.id,
             username: attendance.user.username,
             role: attendance.user.role,
-            coordinatesId: attendance.user.corrdinatesId,
+            coordinatesId: attendance.user.coordinatesId,
             isAnon: false,
           });
         }
       }
+
       return participants;
     } catch (error) {
-      console.error("Error getting carppol participants: ", error);
+      console.error("Error getting carpool participants: ", error);
       return [];
     }
   }
@@ -82,7 +83,7 @@ class CarpoolService {
       const filteredParticipants = [];
 
       for (const participant of participants) {
-        const canViewParticipant = await this.canViewCarpoolParticipants(
+        const canViewParticipant = await this.canViewParticipantProfile(
           viewerId,
           participant.userId
         );
@@ -128,11 +129,10 @@ class CarpoolService {
     }
   }
 
-  async getCarppolDisplayName(userId) {
+  async getCarpoolDisplayName(userId) {
     try {
       const privacySettings = await this.prisma.userPrivacySettings.findUnique({
-        where: { id: userId },
-        select: { username: true },
+        where: { userId },
       });
 
       if (privacySettings && privacySettings.isAnon) {
