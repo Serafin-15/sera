@@ -5,25 +5,15 @@ class PrivacyService {
     this.prisma = new PrismaClient();
   }
 
-  async createPrivacySettings(userId, settings = {}) {
+  async createPrivacySettings(userId) {
     try {
-      const defaultSettings = {
-        profileVisibility: "friends_only",
-        friendVisibility: "friend_only",
-        eventVisibility: "friend_only",
-        isAnon: false,
-        anonUsername: null,
-        ...settings,
-      };
-
-      const privacySettings = await this.prisma.userPrivacySettings.create({
+      return await this.prisma.userPrivacySettings.create({
         data: {
           userId,
-          ...defaultSettings,
+          isAnon: false,
+          anonUsername: null,
         },
       });
-
-      return privacySettings;
     } catch (error) {
       console.error("Error creating settings:", error);
     }
@@ -31,11 +21,9 @@ class PrivacyService {
 
   async getPrivacySettings(userId) {
     try {
-      const settings = await this.prisma.userPrivacySettings.findUnique({
+      return await this.prisma.userPrivacySettings.findUnique({
         where: { userId },
       });
-
-      return settings;
     } catch (error) {
       console.error("Error getting settings", error);
     }
@@ -43,111 +31,30 @@ class PrivacyService {
 
   async updatePrivacySettings(userId, settings) {
     try {
-      const updatedSettings = await this.prisma.userPrivacySettings.update({
+      return await this.prisma.userPrivacySettings.update({
         where: { userId },
         data: settings,
       });
-      return updatedSettings;
     } catch (error) {
       console.error("Error updating privacy settings ", error);
     }
   }
-  async blockUser(userId, userToBlockId) {
+  async isUserAnonymous(userId) {
     try {
-      const isBlocked = await this.isUserBlocked(userId, userToBlockId);
-
-      if (isBlocked) {
-        throw new Error("User already blocked");
-      }
-
-      const blockedUser = await this.prisma.blockedUser.create({
-        data: {
-          userId,
-          blockedUserId: userToBlockId,
-        },
-      });
-
-      await this.prisma.friend.deleteMany({
-        where: {
-          OR: [
-            {
-              user_id: userId,
-              friend_id: userToBlockId,
-            },
-            {
-              user_id: userToBlockId,
-              friend_id: userId,
-            },
-          ],
-        },
-      });
-
-      return {
-        message: "User Blocked successfully",
-        blockedUser,
-      };
+      const settings = await this.getPrivacySettings(userId);
+      return settings ? settings.isAnon : false;
     } catch (error) {
-      console.error("Error blocking user: ", error);
-    }
-  }
-
-  async unblockUser(userId, userToUnblockId) {
-    try {
-      const isBlocked = await this.isUserBlocked(userId, userToUnblockId);
-
-      if (!isBlocked) {
-        throw new Error("User is not blocked");
-      }
-
-      await this.prisma.blockedUser.delete({
-        where: {
-          userId_blockedUserId: {
-            userId,
-            blockedUserId: userToUnblockId,
-          },
-        },
-      });
-
-      return {
-        message: "User unblocked successfully",
-      };
-    } catch (error) {
-      console.log("Error when trying to unblock user ", error);
-    }
-  }
-  async getBlockedUsers(userId) {
-    try {
-      const blockedUsers = await this.prisma.blockedUser.findMany({
-        where: { userId },
-        include: {
-          blockedUser: {
-            select: {
-              id: true,
-              username: true,
-              role: true,
-            },
-          },
-        },
-      });
-      return blockedUsers.map((block) => block.blockedUser);
-    } catch (error) {
-      console.error("Error getting blocked users:", error);
-    }
-  }
-  async isUserBlocked(userId, userToCheckId) {
-    try {
-      const blockedUser = await this.prisma.blockedUser.findUnique({
-        where: {
-          userId_blockedUserId: {
-            userId,
-            blockedUserId: userToCheckId,
-          },
-        },
-      });
-      return !!blockedUser;
-    } catch (error) {
-      console.error("Error checking user is blocked", error);
+      console.error("Error checking if user is anonymous: ", error);
       return false;
+    }
+  }
+  async getAnonymousUsername(userId) {
+    try {
+      const settings = await this.getPrivacySettings(userId);
+      return settings ? settings.anonUsername : null;
+    } catch (error) {
+      console.error("Error getting anonymous username: ", error);
+      return null;
     }
   }
   async canViewProfile(viewerId, targetUserId) {
@@ -155,10 +62,6 @@ class PrivacyService {
       if (viewerId === targetUserId) {
         return true;
       }
-      const isBlocked = await this.isUserBlocked(targetUserId, viewerId);
-      if (isBlocked) {
-        return false;
-      }
       const privacySettings = await this.getPrivacySettings(targetUserId);
       if (!privacySettings) {
         return false;
@@ -166,74 +69,40 @@ class PrivacyService {
       if (privacySettings.isAnon) {
         return false;
       }
-      switch (privacySettings.profileVisibility) {
-        case "public":
-          return true;
-        case "friends_only":
-          return await this.areFriends(viewerId, targetUserId);
-        case "private":
-          return false;
-        default:
-          return false;
-      }
+      return true;
     } catch (error) {
       console.error("Error checking profile view permission:", error);
       return false;
     }
   }
-  async canViewFriends(viewerId, targetUserId) {
+  async canViewEventAttendees(viewerId, eventId) {
     try {
-      if (viewerId === targetUserId) {
-        return true;
-      }
-      const isBlocked = await this.isUserBlocked(targetUserId, viewerId);
-      if (isBlocked) {
-        return false;
-      }
-      const privacySettings = await this.getPrivacySettings(targetUserId);
-      if (!privacySettings) {
-        return false;
-      }
-      if (privacySettings.isAnon) {
-        return false;
-      }
-      switch (privacySettings.profileVisibility) {
-        case "public":
-          return true;
-        case "friends_only":
-          return await this.areFriends(viewerId, targetUserId);
-        case "private":
-          return false;
-        default:
-          return false;
-      }
-    } catch (error) {
-      console.error("Error checking friends view permission:", error);
-      return false;
-    }
-  }
-  async areFriends(userId1, userId2) {
-    try {
-      const friendship = await this.prisma.friend.findFirst({
-        where: {
-          OR: [
-            {
-              user_id: userId1,
-              friend_id: userId2,
-              status: "accepted",
-            },
-            {
-              user_id: userId2,
-              friend_id: userId1,
-              status: "accepted",
-            },
-          ],
-        },
+      const event = await this.prisma.event.findUnique({
+        where: { id: eventId },
+        select: { creatorId: true, isPublic: true },
       });
 
-      return !!friendship;
+      if (!event) {
+        return false;
+      }
+      if (!viewerId === event.creatorId) {
+        return true;
+      }
+      if (event.isPublic) {
+        return true;
+      }
+
+      const attendance = await this.prisma.eventAttendance.findUnique({
+        where: {
+          userId_eventId: {
+            userId: viewerId,
+            eventId: eventId,
+          },
+        },
+      });
+      return !!attendance;
     } catch (error) {
-      console.error("Error checking if friends ", error);
+      console.error("Error checking event atttendees view permission: ", error);
       return false;
     }
   }
@@ -261,18 +130,10 @@ class PrivacyService {
           interest: userData.interest,
         };
       }
-      const canViewFriends = await this.canViewFriends(viewerId, targetUserId);
-      let filteredFriends = [];
-      if (canView && userData.friends) {
-        filteredFriends = await this.filterFriendsList(
-          viewerId,
-          userData.friends
-        );
-      }
+
       return {
         ...userData,
-        friends: filteredFriends,
-        friendsVisible: canViewFriends,
+        isAnon: false,
       };
     } catch (error) {
       console.error("Error filtering user data: ", error);
@@ -283,64 +144,67 @@ class PrivacyService {
       };
     }
   }
-  async filterFriendsList(viewerId, friends) {
+  async filterAttendeesList(viewerId, attendees) {
     try {
-      const filteredFriends = [];
+      const filterAttendees = [];
 
-      for (const friend of friends) {
-        const canViewFriend = await this.canViewProfile(viewerId, friend.id);
-        if (canViewFriend) {
-          const friendPrivacySettings = await this.getPrivacySettings(
-            friend.id
+      for (const attendee of attendees) {
+        const canViewAttendee = await this.canViewProfile(
+          viewerId,
+          attendee.user.id
+        );
+        if (canViewAttendee) {
+          const attendeePrivacySettings = await this.getPrivacySettings(
+            attendee.user.id
           );
 
-          if (friendPrivacySettings && friendPrivacySettings.isAnon) {
-            filteredFriends.push({
-              id: friend.id,
-              username: privacySettings.anonUsername || "Anonymous User",
+          if (attendeePrivacySettings && attendeePrivacySettings.isAnon) {
+            filterAttendees.push({
+              id: attendee.user.id,
+              username:
+                attendeePrivacySettings.anonUsername || "Anonymous User",
               isAnon: true,
-              role: userData.role,
+              role: attendee.user.role,
             });
           } else {
-            this.filterFriendsList.push(friend);
+            filterAttendees.push(attendee);
           }
         }
       }
-      return filteredFriends;
+      return filterAttendees;
     } catch (error) {
       console.error("Error filtering friends lsit: ", error);
       return [];
     }
   }
-
-  async getFriendPrivacySettings(userId, friendId) {
+  async getDisplayName(userId) {
     try {
-      const areFriends = await this.areFriends(userId, friendId);
-
-      if (!areFriends) {
-        return null;
+      const privacySettings = await this.getPrivacySettings(userId);
+      if (privacySettings && privacySettings.isAnon) {
+        return privacySettings.anonUsername || "Anonymous User";
       }
 
-      const isBlocked = await this.isUserBlocked(friendId, userId);
-      if (isBlocked) {
-        return null;
-      }
+      const user = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { username: true },
+      });
 
-      const privacySettings = await this.getFriendPrivacySettings(friendId);
-      if (!privacySettings) {
-        return null;
-      }
-      return {
-        profileVisibility: privacySettings.profileVisibility,
-        friendVisibility: privacySettings.friendVisibility,
-        eventVisibility: privacySettings.eventVisibility,
-        isAnon: privacySettings.isAnon,
-        anonUsername: privacySettings.isAnon
-          ? privacySettings.anonUsername
-          : null,
-      };
+      return user ? usernname : "Unknown User";
     } catch (error) {
-      console.error("Error getting friend privacy settings: ", error);
+      console.error("Error getting display name: ", error);
+      return "Unkown user";
+    }
+  }
+
+  async ensurePrivacySettings(userId) {
+    try {
+      let settings = await this.getPrivacySettings(userId);
+      if (!settings) {
+        settings = await this.createPrivacySettings(userId);
+      }
+      return settings;
+    } catch {
+      console.error("Error ensuring privacy settings: ", error);
       return null;
     }
   }

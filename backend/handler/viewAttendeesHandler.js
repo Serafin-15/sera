@@ -1,8 +1,10 @@
 const ActionHandler = require("./actionHandler");
 const PrivacyResponse = require("./privacyResponse");
 const { PrismaClient } = require("../generated/prisma");
+const PrivacyService = require("../service/privacyService");
 
 const prisma = new PrismaClient();
+const privacyService = new PrivacyService();
 
 class viewAttendeesHandler extends ActionHandler {
   constructor() {
@@ -28,70 +30,40 @@ class viewAttendeesHandler extends ActionHandler {
         ),
       };
     }
-    if (request.requesterId === event.creatorId) {
-      const attendees = await this.getAttendees(eventId);
-      return {
-        handled: true,
-        response: PrivacyResponse.success(attendees).setHandler(
-          "ViewAttendeesHandler-Owner"
-        ),
-      };
-    }
-    const isBlocked = await this.checkBlockedStatus(
-      request.requesterId,
-      event.creatorId
-    );
-    if (isBlocked) {
-      return {
-        handled: true,
-        response: PrivacyResponse.failure("Access blocked").setHandler(
-          "ViewAttendeesHandler-Blocked"
-        ),
-      };
-    }
 
-    if (event.isPublic) {
-      const attendees = await this.getAttendees(eventId);
-      return {
-        handled: true,
-        response: PrivacyResponse.success(attendees).setHandler(
-          "ViewAttendeesHandler-Public"
-        ),
-      };
-    }
-
-    const areFriends = await this.checkFriendship(
-      request.requesterId,
-      event.creatorId
-    );
-    if (areFriends) {
-      const attendees = await this.getAttendees(eventId);
-      return {
-        handled: true,
-        response: PrivacyResponse.success(attendees).setHandler(
-          "ViewAttendeesHandler-Friends"
-        ),
-      };
-    }
-
-    const isAttending = await this.checkAttendance(
+    const canView = await privacyService.canViewEventAttendees(
       request.requesterId,
       eventId
     );
-    if (isAttending) {
-      const attendees = await this.getAttendees(eventId);
+
+    if (!canView) {
       return {
         handled: true,
-        response: PrivacyResponse.success(attendees).setHandler(
-          "ViewAttendeesHandler-Attendee"
+        response: PrivacyResponse.failure("Access Denied").setHandler(
+          "ViewAttendeesHandler-Denied"
         ),
       };
     }
+
+    const attendees = await this.getAttendees(eventId);
+    const filteredAttendees = await privacyService.filterAttendeesList(
+      request.requesterId,
+      attendees
+    );
+
+    let handlerType = "ViewAttendeesHandler-Default";
+    if (request.requesterId === event.creatorId) {
+      handlerType = "ViewAttendeesHandler-Owner";
+    } else if (event.isPublic) {
+      handlerType = "ViewAttendeesHandler-Public";
+    } else {
+      handlerType = "ViewAttendeesHandler-Attendee";
+    }
+
     return {
       handled: true,
-      response: PrivacyResponse.success("Access denied").setHandler(
-        "ViewAttendeesHandler-Default"
-      ),
+      response:
+        PrivacyResponse.success(filteredAttendees).setHandler(handlerType),
     };
   }
 
@@ -128,62 +100,6 @@ class viewAttendeesHandler extends ActionHandler {
           }
         : attendance.user,
     }));
-  }
-
-  async checkBlockedStatus(requesterId, targetId) {
-    const blockedByTarget = await prisma.blockedUser.findUnique({
-      where: {
-        userId_blockedUserId: {
-          userId: targetId,
-          blockedUserId: requesterId,
-        },
-      },
-    });
-
-    const hasBlockedTarget = await prisma.blockedUser.findUnique({
-      where: {
-        userId_blockedUserId: {
-          userId: requesterId,
-          blockedUserId: targetId,
-        },
-      },
-    });
-
-    return !!(blockedByTarget || hasBlockedTarget);
-  }
-
-  async checkFriendship(userId1, userId2) {
-    const friendship = await prisma.friend.findFirst({
-      where: {
-        OR: [
-          {
-            user_id: userId1,
-            friend_id: userId2,
-            status: "accepted",
-          },
-          {
-            user_id: userId2,
-            friend_id: userId1,
-            status: "accepted",
-          },
-        ],
-      },
-    });
-
-    return !!friendship;
-  }
-
-  async checkAttendance(userId, eventId) {
-    const attendance = await prisma.eventAttendance.findUnique({
-      where: {
-        userId_eventId: {
-          userId,
-          eventId,
-        },
-      },
-    });
-
-    return !!attendance;
   }
 }
 
