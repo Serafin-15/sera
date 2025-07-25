@@ -51,20 +51,36 @@ class viewAttendeesHandler extends ActionHandler {
       attendees
     );
 
-    let handlerType = "ViewAttendeesHandler-Default";
-    if (request.requesterId === event.creatorId) {
-      handlerType = "ViewAttendeesHandler-Owner";
-    } else if (event.isPublic) {
-      handlerType = "ViewAttendeesHandler-Public";
-    } else {
-      handlerType = "ViewAttendeesHandler-Attendee";
-    }
+    let handlerType = this.determineHandlerType(request.requesterId, event);
 
     return {
       handled: true,
       response:
         PrivacyResponse.success(filteredAttendees).setHandler(handlerType),
     };
+  }
+
+  determineHandlerType(requesterId, event) {
+    let accessType;
+
+    if (requesterId === event.creatorId) {
+      accessType = "OWNER";
+    } else if (event.isPublic) {
+      accessType = "PUBLIC";
+    } else {
+      accessType = "ATTENDEE";
+    }
+
+    switch (accessType) {
+      case "OWNER":
+        return "ViewAttendeesHandler-Owner";
+      case "PUBLIC":
+        return "ViewAttendeesHandler-Public";
+      case "ATTENDEE":
+        return "ViewAttendeesHandler-Attendee";
+      default:
+        return "ViewAttendeesHandler-Default";
+    }
   }
 
   async getEvent(eventId) {

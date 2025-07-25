@@ -2,6 +2,7 @@ const {
   PrivacyHandlerCreator,
   ViewProfileHandler,
   ViewAttendeesHandler,
+  ViewCarpoolHandler,
 } = require("../handler/privacyActionHandler");
 
 describe("PrivacyHandlerCreator", () => {
@@ -14,7 +15,11 @@ describe("PrivacyHandlerCreator", () => {
     expect(chain.nextHandler).toBeInstanceOf(ViewAttendeesHandler);
     expect(chain.nextHandler.action).toBe("view_attendees");
 
-    expect(chain.nextHandler.nextHandler).toBeNull();
+    expect(chain.nextHandler.nextHandler).toBeInstanceOf(ViewCarpoolHandler);
+    expect(chain.nextHandler.nextHandler.action).toBe("view_carpool");
+
+
+    expect(chain.nextHandler.nextHandler.nextHandler).toBeNull();
   });
 
   test("Should create independent chain instances", () => {
