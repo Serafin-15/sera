@@ -11,25 +11,25 @@ import { AuthProvider } from "./context/AuthContext";
 function App() {
   return (
     <AuthProvider>
-    <Router>
-      <div className="App">
-        <header className="banner">
-          <div className="link-container">
-            <Link to={`/calendar`}>Calendar page</Link>
-            <Link to={`/events`}>Event List page</Link>
-            <Link to={`/profile`}>Profile page</Link>
-            <Link to={`/`}>Return to Login</Link>
-          </div>
-        </header>
-        <Routes>
-          <Route path="/" element={<Login />}></Route>
-          <Route path="/events" element={<EventList />}></Route>
-          <Route path="/calendar" element={<Calendar />}></Route>
-          <Route path="/profile" element={<Profile />}></Route>
-        </Routes>
-        <footer>Sera for a better future</footer>
-      </div>
-    </Router>
+      <Router>
+        <div className="App">
+          <header className="banner">
+            <div className="link-container">
+              <Link to={`/calendar`}>Calendar Page</Link>
+              <Link to={`/events`}>Eventlist Page</Link>
+              <Link to={`/profile`}>Profile Page</Link>
+              <Link to={`/`}>Return to Login</Link>
+            </div>
+          </header>
+          <Routes>
+            <Route path="/" element={<Login />}></Route>
+            <Route path="/events" element={<EventList />}></Route>
+            <Route path="/calendar" element={<Calendar />}></Route>
+            <Route path="/profile" element={<Profile />}></Route>
+          </Routes>
+          <footer>Sera for a better future</footer>
+        </div>
+      </Router>
     </AuthProvider>
   );
 }

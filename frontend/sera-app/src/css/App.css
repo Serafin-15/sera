@@ -1,97 +1,166 @@
 @import "./EventList.css";
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
 
-.container {
+* {
+  margin: 0;
+}
+body {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+  color: black;
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  min-height: 100vh;
+}
+#root {
+  min-height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
 }
 
-input {
-  padding: 1rem;
+.App {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-button {
-  padding: 1rem;
+.App .banner {
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  color: white;
+  padding: 1rem 2rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.75);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  border-bottom: 1px solid white;
 }
 
-#role {
-  padding: 1rem;
+.App .link-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  flex-wrap: wrap;
+  max-width: 1200px;
+  margin: 0 auto;
 }
+
+.App .link-container a {
+  color: black;
+  text-decoration: none;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  transition: all 0.3 ease;
+  font-weight: 500;
+  background: rgba(255, 2555, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid white;
+  font-size: 0.9rem;
+}
+
+.App .link-container a:hover {
+  background: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px black;
+}
+
+.App > *:not(.banner):not(footer) {
+  flex: 1;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.App footer {
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  color: black;
+  padding: 1rem;
+  text-align: center;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.75);
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+  border-top: 1px solid white;
+}
+
 .login-container {
   max-width: 400px;
-  margin: 0 auto;
+  margin: 2rem auto;
   padding: 2rem;
-  border-radius: 8px;
-  background-color: lightgoldenrodyellow;
+  border-radius: 15px;
+  background-color: white;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(10px);
+  border: 1px solid white;
 }
 
 .login-container h1 {
   color: black;
   margin-bottom: 2rem;
   font-size: 2rem;
+  text-align: center;
+  background: linear-gradient(to right, #ffdf00, #daa521);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .login-container form {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 1.5rem;
 }
 
 .login-container input,
 .login-container select {
-  padding: 0.75rem;
-  border: solid 1px black;
-  border-radius: 4px;
+  padding: 1rem;
+  border: 2px solid black;
+  border-radius: 10px;
   font-size: 1rem;
+  background: lightgrey;
+}
+
+.login-container input:focus,
+.login-container select:focus {
+  outline: none;
+  border-color: lightseagreen;
+  background: white;
 }
 
 .login-container button {
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 10px;
   font-size: 1rem;
-  transition: background-color 0.2s;
+  font-weight: 600;
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  color: black;
+  cursor: pointer;
+  transition: all 0.3 ease;
 }
 
-.App .welcome {
+.login-container button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px lightgrey;
+}
+
+button {
+  padding: 0.75rem 1.5rem;
+  border: none;
   border-radius: 8px;
-  background-color: lightgoldenrodyellow;
-  border: 1px solid black;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3 ease;
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
 }
 
-.App footer {
-  border-top: 1px solid black;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 40px;
-  background-color: lightgoldenrodyellow;
-  text-align: center;
-  font-style: bold;
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px lightgrey;
 }
 
-.App .banner {
-  border-bottom: 1px solid black;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 0.5rem;
-  padding: 2rem;
-  background-color: lightgoldenrodyellow;
-}
-
-.App .link-container {
+.profile-container {
   display: flex;
-  justify-content: space-evenly;
-}
-
-.label-container {
-  margin-bottom: 15px;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
 }
