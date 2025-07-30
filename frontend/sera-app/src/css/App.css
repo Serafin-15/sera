@@ -96,7 +96,7 @@ body {
   margin-bottom: 2rem;
   font-size: 2rem;
   text-align: center;
-  background: linear-gradient(to right, #ffdf00, #daa521);
+  background: Black;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -164,3 +164,75 @@ button:hover {
   padding: 2rem;
   background: linear-gradient(to right, #cbe4f9, #eff9da);
 }
+
+.profile-card{
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.75);
+  padding: 3rem;
+  max-width: 500px;
+  width: 100%;
+  text-align: center;
+  border: 1px solid lightgrey;
+}
+
+.profile-header{
+  margin-bottom: 2.5rem;
+}
+
+.profile-avatar{
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 0 auto 1.5rem;
+  font-size: 2rem;
+  color: black;
+  box-shadow: 0 14px 20px lightgrey;
+}
+
+.profile-card h1{
+  color: black;
+  font-size: 1.8rem;
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+
+.profile-info {
+  margin-bottom: 2.5rem;
+}
+
+.info-item{
+  display: flex;
+  justify-content:  space-between;
+  align-items: center;
+  padding: 1rem 0;
+  border-bottom: 1px solid lightgrey;
+  text-align: left;
+}
+
+.info-item:last-child{
+  border-bottom: none;
+}
+
+.info-item label{
+  font-weight: 600;
+  color: grey;
+  font-size: 0.95rem;
+}
+.info-item span {
+  color: grey;
+  font-weight: 500;
+  font-size: 0.95rem;
+}
+
+.role-badge{
+  background: linear-gradient(to right, #cbe4f9, #eff9da);
+  padding: 0.4rem 1rem;
+  border-radius: 25px;
+  text-transform: capitalize;
+}
+
