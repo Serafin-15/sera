@@ -15,25 +15,19 @@ export default function Calendar() {
     title: "",
     description: "",
     start: new Date(),
-    end: new Date(),
+    end: new Date(new Date().getTime() + 60 * 60 * 1000),
     allDay: false,
   });
+  const formatDateInput = (date) => {
+    if (!date || isNaN(date.getTime())) return "";
 
-    const safeCreateDate = (dateValue) => {
-    try{
-        const date = new Date(dateValue);
-        return !isNaN(date.getTime()) ? date : new Date();
-    } catch (error) {
-        return new Date();
-    }
-  };
+    const year = date.getFullYear();
+    const month = String(date.getMonth() * 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    const hours = String(date.getHours()).padStart(2, "0");
+    const minutes = String(date.getMinutes()).padStart(2, "0");
 
-  const convertUTC = (localDate) => {
-        if(localDate instanceof Date && !isNaN(localDate.getTime())){
-            const utcDate = new Date(localDate.getTime() + (localDate.getTimezoneOffset()) * 60000);
-            return utcDate;
-        }
-        return localDate;
+    return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
   useEffect(() => {
@@ -57,8 +51,8 @@ export default function Calendar() {
     setEventForm({
       title: "",
       description: "",
-      start: convertUTC(safeCreateDate(selectInfo.start)),
-      end: convertUTC(safeCreateDate(selectInfo.end)),
+      start: selectInfo.start,
+      end: selectInfo.end,
       allDay: false,
     });
     setSelectedEvent(null);
@@ -70,8 +64,8 @@ export default function Calendar() {
     setEventForm({
       title: clickInfo.title,
       description: clickInfo.description || "",
-      start: convertUTC(safeCreateDate(clickInfo.start)),
-      end: convertUTC(safeCreateDate(clickInfo.end)),
+      start: clickInfo.start,
+      end: clickInfo.end,
       allDay: clickInfo.allDay,
     });
     setShowEventModal(true);
@@ -87,8 +81,8 @@ export default function Calendar() {
       id: selectedEvent ? selectedEvent.id : Date.now().toString(),
       title: eventForm.title,
       description: eventForm.description,
-      start: convertUTC(safeCreateDate(eventForm.start)),
-      end: convertUTC(safeCreateDate(eventForm.end)),
+      start: eventForm.start,
+      end: eventForm.end,
       allDay: eventForm.allDay,
     };
 
@@ -102,15 +96,7 @@ export default function Calendar() {
       setEvents((prevEvents) => [...prevEvents, newEvent]);
     }
 
-    setSelectedEvent(null);
-    setShowEventModal(false);
-    setEventForm({
-      title: "",
-      description: "",
-      start: new Date(),
-      end: new Date(),
-      allDay: false,
-    });
+    resetForm();
   };
 
   const handleDeleteEvent = () => {
@@ -118,29 +104,23 @@ export default function Calendar() {
       setEvents((prevEvents) =>
         prevEvents.filter((event) => event.id !== selectedEvent.id)
       );
-      setSelectedEvent(null);
-      setShowEventModal(false);
-      setEventForm({
-        title: "",
-        description: "",
-        start: new Date(),
-        end: new Date(),
-        allDay: false,
-      });
+      resetForm();
     }
   };
   const handleCancel = () => {
+    resetForm();
+  };
+
+  const resetForm = () => {
     setSelectedEvent(null);
     setShowEventModal(false);
     setEventForm({
       title: "",
       description: "",
       start: new Date(),
-      end: new Date(),
-      allDay: false,
+      end: new Date(new Date().getTime() + 60 * 60 * 1000),
     });
   };
-
 
   const clearAllEvents = () => {
     if (window.confirm("Are you sure you want to clear all events?")) {
@@ -160,7 +140,7 @@ export default function Calendar() {
           <button className="btn-danger" onClick={clearAllEvents}>
             Clear All Events
           </button>
-          <Tooltip/>
+          <Tooltip />
         </div>
       </div>
 
@@ -234,32 +214,32 @@ export default function Calendar() {
                 <label>Start Date & Time</label>
                 <input
                   type="datetime-local"
-                  value={eventForm.start.toISOString().slice(0, 16)}
-                  onChange={(e) =>{
-                    const newDate = safeCreateDate(e.target.value)
-                    setEventForm({
+                  value={eventForm.start ? formatDateInput(eventForm.start) : ""}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if(!isNaN(newDate.getTime())){
+                      setEventForm({
                       ...eventForm,
-                      start: newDate,
-                    })
-                  }            
-                  }
- 
+                      end: newDate,
+                    });
+                    }
+                  }}
                 />
               </div>
               <div className="form-group">
                 <label>End Date & Time</label>
                 <input
                   type="datetime-local"
-                  value={eventForm.end.toISOString().slice(0, 16)}
-                  onChange={(e) =>{
-                    const newDate = safeCreateDate(e.target.value)
-                    setEventForm({
+                  value={eventForm.end ? formatDateInput(eventForm.end) : ""}
+                  onChange={(e) => {
+                    const newDate = new Date(e.target.value);
+                    if(!isNaN(newDate.getTime())){
+                      setEventForm({
                       ...eventForm,
                       end: newDate,
-                    })  
-                  }
-  
-                  }
+                    });
+                    }
+                  }}
                 />
               </div>
             </div>
