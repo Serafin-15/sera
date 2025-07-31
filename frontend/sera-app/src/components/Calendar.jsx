@@ -5,12 +5,15 @@ import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import listPlugin from "@fullcalendar/list";
 import Tooltip from "./Tooltip";
+import RecommendationsPanel from "./RecommendationPanel";
+import { useAuth } from "../context/AuthContext"
 import "../css/Calendar.css";
 
 export default function Calendar() {
   const [events, setEvents] = useState([]);
   const [showEventModal, setShowEventModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const [eventForm, setEventForm] = useState({
     title: "",
     description: "",
@@ -18,11 +21,13 @@ export default function Calendar() {
     end: new Date(new Date().getTime() + 60 * 60 * 1000),
     allDay: false,
   });
+  const { user } = useAuth();
+
   const formatDateInput = (date) => {
     if (!date || isNaN(date.getTime())) return "";
 
     const year = date.getFullYear();
-    const month = String(date.getMonth() * 1).padStart(2, "0");
+    const month = String(date.getMonth() + 1).padStart(2, "0");
     const day = String(date.getDate()).padStart(2, "0");
     const hours = String(date.getHours()).padStart(2, "0");
     const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -127,6 +132,40 @@ export default function Calendar() {
       setEvents([]);
     }
   };
+
+  const handleRecommendedEventSelect = (recommendedEvent) => {
+    const calendarEvent = {
+      id: `rec_${recommendedEvent}`,
+      title: recommendedEvent.title,
+      description: recommendedEvent.description,
+      start: new Date(recommendedEvent.start_date),
+      end: new Date(recommendedEvent.end_date),
+      allDay: false,
+      backgroundColor: '#6667eea',
+      borderColor: '#6667eea',
+      textColor: 'white',
+      extendedProps:{
+        isRecommended: true,
+        recomendationScore: recommendedEvent.scores?.total,
+        location: recommendedEvent.location,
+        category: recommendedEvent.category
+      }
+    };
+    const existingEvent = events.find(event => event.id === calendarEvent.id);
+    if(existingEvent){
+      alert('This event is already in your calendar');
+      return;
+    }
+
+    setEvents((prevEvents) => [...prevEvents, calendarEvent]);
+
+    alert(`"${recommendedEvent.title}" has been added to calendar`);
+  }
+  
+  const toggleRecommendations = () => {
+    setShowRecommendations(!showRecommendations);
+  };
+
   return (
     <div className="calendar-container">
       <div className="calendar-header">
@@ -137,6 +176,13 @@ export default function Calendar() {
         </p>
 
         <div className="calendar-actions">
+          {user && (
+            <button 
+            className="btn-recommendations"
+            onClick={toggleRecommendations}>
+              {showRecommendations ? 'Hide' : 'Show'} Recommendations
+            </button>
+          )}
           <button className="btn-danger" onClick={clearAllEvents}>
             Clear All Events
           </button>
@@ -174,10 +220,21 @@ export default function Calendar() {
                   {arg.event.extendedProps.description}
                 </div>
               )}
+              {arg.event.extendedProps.isRecommended && (
+                <div className="recommended-badge">
+                  Recommended ({Math.round(arg.event.extendedProps.recomendationScore)}%)
+                </div>
+              )}
             </div>
           )}
         />
       </div>
+
+      <RecommendationsPanel
+        isVisible={showRecommendations}
+        onToggle={toggleRecommendations}
+        onEventSelect={handleRecommendedEventSelect}
+      />
 
       {showEventModal && (
         <div className="modal-overlay">
@@ -220,7 +277,7 @@ export default function Calendar() {
                     if(!isNaN(newDate.getTime())){
                       setEventForm({
                       ...eventForm,
-                      end: newDate,
+                      start: newDate,
                     });
                     }
                   }}
