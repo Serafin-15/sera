@@ -146,7 +146,7 @@ export default function Calendar() {
       textColor: 'white',
       extendedProps:{
         isRecommended: true,
-        recomendationScore: recommendedEvent.scores?.total,
+        recommendationScore: recommendedEvent.scores?.total,
         location: recommendedEvent.location,
         category: recommendedEvent.category
       }
@@ -222,7 +222,7 @@ export default function Calendar() {
               )}
               {arg.event.extendedProps.isRecommended && (
                 <div className="recommended-badge">
-                  Recommended ({Math.round(arg.event.extendedProps.recomendationScore)}%)
+                  Recommended ({Math.round(arg.event.extendedProps.recomendationScore * 100)}%)
                 </div>
               )}
             </div>

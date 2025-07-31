@@ -1,4 +1,4 @@
-const API_BASE_URL = "http:/localhost:3000";
+const API_BASE_URL = "http://localhost:3000";
 
 async function apiCall(endpoint, options = {}) {
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -19,11 +19,11 @@ async function apiCall(endpoint, options = {}) {
 export const getRecommendedEvents = async (studentId, parentId = null) => {
   const params = new URLSearchParams();
   if (parentId) {
-    params.appemd("parentId", parentId);
+    params.append("parentId", parentId);
   }
 
   const response = await apiCall(
-    `/api/ranking/recommendations/${studentId}?${params}`
+    `/api/recommendations/${studentId}?${params}`
   );
   return response.data || [];
 };
@@ -48,5 +48,3 @@ export const updateUserProfile = async (userId, profileData) => {
   });
   return response.data;
 };
-
-

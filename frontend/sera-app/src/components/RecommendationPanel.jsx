@@ -3,6 +3,11 @@ import { getRecommendedEvents } from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import "../css/RecommendationPanel.css";
 
+const formatEventTime = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString() + " " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
 export default function RecommendationsPanel({
   onEventSelect,
   isVisible,
@@ -25,7 +30,7 @@ export default function RecommendationsPanel({
     setError(null);
 
     try {
-      const recommendedEvents = await getRecommendedEvents(user.id, parent.id);
+      const recommendedEvents = await getRecommendedEvents(user.id);
       setRecommendations(recommendedEvents);
     } catch (err) {
       setError("Failed to load recommendations");
@@ -86,10 +91,10 @@ export default function RecommendationsPanel({
                 {event.scores && (
                   <span
                     className={`score-badge ${getScoreColor(
-                      event.scores.total
+                      event.scores.total * 100
                     )}`}
                   >
-                    {Math.round(event.scores.total)}%
+                    {Math.round(event.scores.total * 100)}%
                   </span>
                 )}
               </div>
@@ -108,19 +113,19 @@ export default function RecommendationsPanel({
                   <div className="score-item">
                     <span className="score-label">Availability:</span>
                     <span className="score-value">
-                      {Math.round(event.score.availability)}%
+                      {Math.round((event.scores.availability / 50) * 100)}%
                     </span>
                   </div>
                   <div className="score-item">
                     <span className="score-label">Distance:</span>
                     <span className="score-value">
-                      {Math.round(event.score.distance)}%
+                      {Math.round((event.scores.distance / 30) * 100)}%
                     </span>
                   </div>
                   <div className="score-item">
                     <span className="score-label">Interest:</span>
                     <span className="score-value">
-                      {Math.round(event.score.interest)}%
+                      {Math.round((event.scores.interest / 100) * 100)}%
                     </span>
                   </div>
                 </div>

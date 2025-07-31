@@ -34,7 +34,7 @@ export const eventsData = [
     time: "18:00",
     location: "City Library, Boston",
     image: "https://example.com/book-launch.jpg",
-    category: "Literature",
+    category: "Art",
     capacity: 50,
     num_attending: 12,
   },
@@ -73,7 +73,7 @@ export const eventsData = [
     time: "09:00",
     location: "Convention Center, San Francisco",
     image: "https://example.com/tech-conference.jpg",
-    category: "Technology",
+    category: "Tech",
     capacity: 150,
     num_attending: 10,
   },
@@ -86,17 +86,50 @@ export const eventsData = [
     time: "19:30",
     location: "Cinema Hall, Seattle",
     image: "https://example.com/film-screening.jpg",
-    category: "Film",
+    category: "Art",
     capacity: 500,
     num_attending: 480,
   },
 ];
 
-export const fetchEvents = () => {
-  return eventsData.slice(0, 6);
+export const fetchEvents = async () => {
+  try {
+    const response = await fetch(
+      "http://localhost:3000/api/events/paginated?page=1&limit=6",
+      {
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch events");
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    return eventsData.slice(0, 6);
+  }
 };
 
-export const fetchMoreEvents = (currentCount) => {
-  const nextEvents = eventsData.slice(currentCount, currentCount + 6);
-  return nextEvents;
+export const fetchMoreEvents = async (currentCount) => {
+  try {
+    const page = Math.floor(currentCount / 6) + 1;
+    const response = await fetch(
+      `http://localhost:3000/api/events/paginated?page=${page}&limit=6`,
+      {
+        credentials: "include",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to fetch more events");
+    }
+
+    const data = await response.json();
+    return data.data || [];
+  } catch (error) {
+    const nextEvents = eventsData.slice(currentCount, currentCount + 6);
+    return nextEvents;
+  }
 };
