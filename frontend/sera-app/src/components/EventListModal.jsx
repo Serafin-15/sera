@@ -20,7 +20,7 @@ export default function eventListModal({ isOpen, event, onClose }) {
         <div className="modal-image-container">
           <img
             className="modal-image"
-            src={event.image}
+            src={"https://picsum.photos/200/300?random=259"}
             alt={event.title}
             onError={(e) => {
               e.target.src = "https://picsum.photos/200/300?random=259";
