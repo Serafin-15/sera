@@ -144,7 +144,7 @@ export default function EventList() {
                     <div className="event-image-container">
                       <img
                         className="event-image"
-                        src={event.image}
+                        src={"https://picsum.photos/200/300?random=259"}
                         alt={event.title}
                         onError={(e) => {
                           e.target.src =

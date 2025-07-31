@@ -194,6 +194,7 @@
 }
 
 .modal-content {
+  text-align: center;
   background: white;
   padding: 2rem;
   border-radius: 8px;
@@ -201,4 +202,9 @@
   width: 90%;
   max-height: 90vh;
   overflow-y: auto;
+}
+.modal-close{
+  position: fixed;
+  top:0;
+  right: 0;
 }
