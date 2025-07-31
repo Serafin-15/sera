@@ -10,6 +10,8 @@ const mapboxRoutes = require("./routes/mapbox");
 const rankRoutes = require("./routes/ranking");
 const carpoolRoutes = require("./routes/carpool");
 const privacyRoutes = require("./routes/privacy");
+const eventsRoutes = require("./routes/event");
+
 
 app.use(express.json());
 app.use(
@@ -31,6 +33,7 @@ app.use(
 app.use(authRoutes);
 app.use("/api", mapboxRoutes);
 app.use("/api", rankRoutes);
+app.use("/api", eventsRoutes);
 app.use("/carpool", carpoolRoutes);
 app.use("/privacy", privacyRoutes);
 
