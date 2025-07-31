@@ -18,7 +18,7 @@ export default function Tooltip() {
       onMouseLeave={() => setIsTooltipVisible(false)}
     >
       <img
-        src="./public/question.png"
+        src="/question.png"
         alt="information button"
         onClick={() => openModal()}
       ></img>

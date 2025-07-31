@@ -222,7 +222,7 @@ export default function Calendar() {
               )}
               {arg.event.extendedProps.isRecommended && (
                 <div className="recommended-badge">
-                  Recommended ({Math.round(arg.event.extendedProps.recomendationScore * 100)}%)
+                  Recommended ({Math.round(arg.event.extendedProps.recommendationScore * 100)}%)
                 </div>
               )}
             </div>
