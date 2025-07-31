@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { getRecommendedEvents } from "../api/api";
 import { useAuth } from "../context/AuthContext";
+import "../css/RecommendationPanel.css";
 
-export default function RecccomendationsPanel({
+export default function RecommendationsPanel({
   onEventSelect,
   isVisible,
   onToggle,
@@ -49,7 +50,7 @@ export default function RecccomendationsPanel({
 
   return (
     <div className="recommendations-panel">
-      <div className="reccomendations-header">
+      <div className="recommendations-header">
         <h3>Recommended Events</h3>
         <button className="close-btn" onClick={onToggle}>
           x

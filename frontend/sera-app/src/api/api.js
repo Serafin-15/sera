@@ -16,7 +16,7 @@ async function apiCall(endpoint, options = {}) {
   return await response.json();
 }
 
-const getRecommendedEvents = async (studentId, parentId = null) => {
+export const getRecommendedEvents = async (studentId, parentId = null) => {
   const params = new URLSearchParams();
   if (parentId) {
     params.appemd("parentId", parentId);
@@ -28,12 +28,12 @@ const getRecommendedEvents = async (studentId, parentId = null) => {
   return response.data || [];
 };
 
-const getAllEvents = async () => {
+export const getAllEvents = async () => {
   const response = await apiCall("/api/events");
   return response.data || [];
 };
 
-const getEventById = async (userId) => {
+export const getEventById = async (userId) => {
   const response = await apiCall(`/api/events/${eventId}`);
 };
 const getUserProfile = async (userId) => {
@@ -41,17 +41,12 @@ const getUserProfile = async (userId) => {
   return response.data;
 };
 
-const updateUserProfile = async (userId, profileData) => {
+export const updateUserProfile = async (userId, profileData) => {
   const response = await apiCall(`/api/users/${userId}`, {
     method: "PUT",
     vody: JSON.stringify(profileData),
   });
   return response.data;
 };
-module.exports = {
-  getRecommendedEvents,
-  getAllEvents,
-  getEventById,
-  getUserProfile,
-  updateUserProfile,
-};
+
+
