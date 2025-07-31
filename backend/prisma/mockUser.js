@@ -101,7 +101,7 @@ async function main() {
     {
       title: "Campus Study Group",
       description: "Join us for a collaborative study session in the library. All subjects welcome!",
-      category: "Education",
+      category: "Tech",
       start_date: new Date("2025-08-01T14:00:00Z"),
       end_date: new Date("2025-08-01T16:00:00Z"),
       location: "Main Library, Study Room A",
@@ -166,7 +166,7 @@ async function main() {
     {
       title: "Science Fair",
       description: "Annual science fair showcasing student projects and experiments",
-      category: "Education",
+      category: "Tech",
       start_date: new Date("2025-08-06T13:00:00Z"),
       end_date: new Date("2025-08-06T16:00:00Z"),
       location: "Science Building, Main Hall",
